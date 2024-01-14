@@ -89,7 +89,6 @@ class abyz22_drawmask:
         mask[: int((y1 + y2) // 2)] = 0
 
         # dr.ellipse((x1 + dx, vy - dy, x2 - dx, vy + dy), fill=255)
-        print(((x1 + x2) // 2, int(y2 * 0.97)), (dx, dy))
         cv2.ellipse(mask, ((x1 + x2) // 2, int(y2 * 0.97)), (dx, dy), 0, 0, 180, 1, -1)
         # 직사각형 그리기
         cv2.rectangle(mask, (x1, int(y2 * 0.95)), (x2, dy2), 1, -1)
@@ -166,14 +165,10 @@ class abyz22_blend_onecolor:
         # one_color = torch.zeros_like(kwargs["imageA"])
         one_color = torch.ones_like(kwargs["imageA"])
 
-        print(kwargs["imageA"].shape, one_color.shape)
         one_color[:, :,:,0].fill_(kwargs["R"]/255.0)
         one_color[:, :,:,1].fill_(kwargs["G"]/255.0)
         one_color[:, :,:,2].fill_(kwargs["B"]/255.0)
 
-        print('☆★'*20)
-        print(kwargs["imageA"].shape)
-        print(one_color.shape)
 
         for i in range(kwargs["imageA"].shape[0]):
             image = obj.image_blend_mask(kwargs["imageA"][i].unsqueeze(0), one_color[i].unsqueeze(0), kwargs["mask"][i].unsqueeze(0), kwargs["blend_percentage"])[0]
