@@ -1,0 +1,635 @@
+{
+  "last_node_id": 16,
+  "last_link_id": 38,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "PreviewImage",
+      "pos": [
+        2838.8382988037115,
+        430.89789638671886
+      ],
+      "size": {
+        "0": 200,
+        "1": 320
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 30
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 7,
+      "type": "PreviewImage",
+      "pos": [
+        2838.8382988037115,
+        60.897896386718855
+      ],
+      "size": {
+        "0": 200,
+        "1": 330
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 29
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 4,
+      "type": "KSampler (Efficient)",
+      "pos": [
+        2353.6779002946487,
+        393.0265968281853
+      ],
+      "size": {
+        "0": 220,
+        "1": 350
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 6
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 32,
+          "slot_index": 1
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 8,
+          "slot_index": 2
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 31
+        },
+        {
+          "name": "optional_vae",
+          "type": "VAE",
+          "link": 10,
+          "slot_index": 4
+        },
+        {
+          "name": "script",
+          "type": "SCRIPT",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CONDITIONING+",
+          "type": "CONDITIONING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "CONDITIONING-",
+          "type": "CONDITIONING",
+          "links": [],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            11
+          ],
+          "shape": 3,
+          "slot_index": 5
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler (Efficient)"
+      },
+      "widgets_values": [
+        16,
+        null,
+        20,
+        4,
+        "euler",
+        "normal",
+        1,
+        "none",
+        "true"
+      ],
+      "shape": 2
+    },
+    {
+      "id": 16,
+      "type": "Efficient Loader",
+      "pos": [
+        1450,
+        130
+      ],
+      "size": [
+        520,
+        460
+      ],
+      "flags": {
+        "pinned": false
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "lora_stack",
+          "type": "LORA_STACK",
+          "link": null
+        },
+        {
+          "name": "cnet_stack",
+          "type": "CONTROL_NET_STACK",
+          "link": null,
+          "slot_index": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            34
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CONDITIONING+",
+          "type": "CONDITIONING",
+          "links": [
+            35
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "CONDITIONING-",
+          "type": "CONDITIONING",
+          "links": [
+            36
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            37
+          ],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            38
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [],
+          "shape": 3,
+          "slot_index": 5
+        },
+        {
+          "name": "DEPENDENCIES",
+          "type": "DEPENDENCIES",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Efficient Loader"
+      },
+      "widgets_values": [
+        "majicmixRealistic_v7.safetensors",
+        "vae-ft-mse-840000-ema-pruned.ckpt",
+        -2,
+        "None",
+        1,
+        1,
+        "beautiful, looking front, (1girl:1.4), beautiful woman, girl, looking at viewer, (best quality),",
+        "(worst quality, low quality:1.4),",
+        "length+mean",
+        "A1111",
+        512,
+        768,
+        4
+      ],
+      "shape": 2
+    },
+    {
+      "id": 1,
+      "type": "KSampler (Efficient)",
+      "pos": [
+        2060,
+        120
+      ],
+      "size": {
+        "0": 240,
+        "1": 700
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 34
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 35,
+          "slot_index": 1
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 36
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 37,
+          "slot_index": 3
+        },
+        {
+          "name": "optional_vae",
+          "type": "VAE",
+          "link": 38
+        },
+        {
+          "name": "script",
+          "type": "SCRIPT",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CONDITIONING+",
+          "type": "CONDITIONING",
+          "links": [
+            27
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "CONDITIONING-",
+          "type": "CONDITIONING",
+          "links": [
+            8
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [],
+          "shape": 3,
+          "slot_index": 3
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            10,
+            28
+          ],
+          "shape": 3,
+          "slot_index": 4
+        },
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            26
+          ],
+          "shape": 3,
+          "slot_index": 5
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler (Efficient)"
+      },
+      "widgets_values": [
+        11,
+        null,
+        15,
+        4,
+        "euler",
+        "normal",
+        1,
+        "auto",
+        "true"
+      ],
+      "shape": 2
+    },
+    {
+      "id": 14,
+      "type": "Landu_Padding Image",
+      "pos": [
+        2360,
+        90
+      ],
+      "size": [
+        380,
+        240
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 26
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 27
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            29
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "pose_image",
+          "type": "IMAGE",
+          "links": [
+            30
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            32
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [
+            31
+          ],
+          "shape": 3,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Landu_Padding Image"
+      },
+      "widgets_values": [
+        "control_v11p_sd15_openpose.pth",
+        1.75,
+        "noise",
+        "Random",
+        0.3,
+        0.5
+      ]
+    },
+    {
+      "id": 5,
+      "type": "PreviewImage",
+      "pos": [
+        2590,
+        390
+      ],
+      "size": {
+        "0": 230,
+        "1": 370
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    }
+  ],
+  "links": [
+    [
+      6,
+      1,
+      0,
+      4,
+      0,
+      "MODEL"
+    ],
+    [
+      8,
+      1,
+      2,
+      4,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      10,
+      1,
+      4,
+      4,
+      4,
+      "VAE"
+    ],
+    [
+      11,
+      4,
+      5,
+      5,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      1,
+      5,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      27,
+      1,
+      1,
+      14,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      28,
+      1,
+      4,
+      14,
+      2,
+      "VAE"
+    ],
+    [
+      29,
+      14,
+      0,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      30,
+      14,
+      1,
+      6,
+      0,
+      "IMAGE"
+    ],
+    [
+      31,
+      14,
+      3,
+      4,
+      3,
+      "LATENT"
+    ],
+    [
+      32,
+      14,
+      2,
+      4,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      34,
+      16,
+      0,
+      1,
+      0,
+      "MODEL"
+    ],
+    [
+      35,
+      16,
+      1,
+      1,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      36,
+      16,
+      2,
+      1,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      37,
+      16,
+      3,
+      1,
+      3,
+      "LATENT"
+    ],
+    [
+      38,
+      16,
+      4,
+      1,
+      4,
+      "VAE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
