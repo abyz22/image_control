@@ -6729,88 +6729,6 @@
       "bgcolor": "#000"
     },
     {
-      "id": 120,
-      "type": "abyz22_Padding Image",
-      "pos": [
-        1229.1998535156245,
-        -198.59998779296876
-      ],
-      "size": {
-        "0": 317.4000244140625,
-        "1": 286
-      },
-      "flags": {},
-      "order": 80,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 251,
-          "slot_index": 0
-        },
-        {
-          "name": "conditioning",
-          "type": "CONDITIONING",
-          "link": 253
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 255,
-          "slot_index": 2
-        }
-      ],
-      "outputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "links": [
-            248
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "pose_image",
-          "type": "IMAGE",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "conditioning",
-          "type": "CONDITIONING",
-          "links": [
-            249
-          ],
-          "shape": 3,
-          "slot_index": 2
-        },
-        {
-          "name": "latent",
-          "type": "LATENT",
-          "links": [
-            247
-          ],
-          "shape": 3,
-          "slot_index": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "abyz22_Padding Image"
-      },
-      "widgets_values": [
-        "control_v11p_sd15_openpose.pth",
-        1.75,
-        "noise",
-        "Random",
-        0.3,
-        1.8,
-        222923,
-        "fixed"
-      ]
-    },
-    {
       "id": 137,
       "type": "PreviewImage",
       "pos": [
@@ -7311,6 +7229,88 @@
         0.5,
         1024,
         1536
+      ]
+    },
+    {
+      "id": 120,
+      "type": "abyz22_Padding Image",
+      "pos": [
+        1229.1998535156245,
+        -198.59998779296876
+      ],
+      "size": {
+        "0": 317.4000244140625,
+        "1": 286
+      },
+      "flags": {},
+      "order": 80,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 251,
+          "slot_index": 0
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 253
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 255,
+          "slot_index": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            248
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "pose_image",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "links": [
+            249
+          ],
+          "shape": 3,
+          "slot_index": 2
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [
+            247
+          ],
+          "shape": 3,
+          "slot_index": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "abyz22_Padding Image"
+      },
+      "widgets_values": [
+        "control_v11p_sd15_openpose.pth",
+        1.75,
+        "noise",
+        "Random",
+        0.3,
+        2.5,
+        222923,
+        "fixed"
       ]
     }
   ],
