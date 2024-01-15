@@ -2,9 +2,10 @@ import math, cv2, random, torch, torchvision, json, os
 import numpy as np
 import nodes, folder_paths  # 기본노드, 파일로드
 from . import wildcards
-# from . import prompts_maker
-# from openpyxl import load_workbook
-# from openpyxl.styles import Alignment
+if os.path.isfile('./custom_nodes/comfyUI_abyz22/prompts_maker.py'):
+    from . import prompts_maker
+    from openpyxl import load_workbook
+    from openpyxl.styles import Alignment
 
 # class name:
 #     def __init__(self):
