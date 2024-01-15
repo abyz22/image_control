@@ -60,8 +60,9 @@ class abyz22_drawmask:
             "required": {
                 "segs": ("SEGS",),
                 "dx": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
-                "dy": ("FLOAT", {"default": 0.5, "min": -2.0, "max": 2.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "dy": ("FLOAT", {"default": 0.5, "min": 0, "max": 2.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
                 "dy2": ("FLOAT", {"default": 0.5, "min": -2.0, "max": 2.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "dy3": ("FLOAT", {"default": 0.5, "min": -2.0, "max": 2.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
                 "mode_type": (
                     [
                         "Waist-detect",
@@ -105,12 +106,12 @@ class abyz22_drawmask:
             person_mask = obj.doit(kwargs["person_SEGS"])[0]
 
             person_mask = person_mask.numpy()[0]
-            person_mask[: int(y1 - kwargs["dy"] * h), :] = 0  # 윗부분 자르기
-            person_mask[int(y1 - kwargs["dy2"] * h) :, :] = 0  # 아랫부분 자르기
+            person_mask[: int(y1 - kwargs["dy2"] * h), :] = 0  # 윗부분 자르기
+            person_mask[int(y1 - kwargs["dy3"] * h) :, :] = 0  # 아랫부분 자르기
 
+            cv2.ellipse(person_mask, (int((x1 + x2) // 2), int(y1 - kwargs["dy3"] * h)), (int(dx), int(dy)), 0, 0, 180, 1, -1) #아랫부분 끝부터
 
             # cv2.rectangle(person_mask, (int(x1 - 3 * w), int(y1 - 2 * h)), (int(x2 + 3 * w), int(y2)), 1, -1)
-            # cv2.ellipse(mask, (int((x1 + x2) // 2), int(y2 * 0.97)), (int(dx), int(dy)), 0, 0, 180, 1, -1)
             mask = person_mask
 
         mask = np.array(mask)
