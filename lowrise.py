@@ -107,14 +107,7 @@ class abyz22_drawmask:
             person_mask = person_mask.numpy()[0]
             person_mask[: int(y1 - kwargs["dy"] * h), :] = 0  # 윗부분 자르기
             person_mask[int(y1 - kwargs["dy2"] * h) :, :] = 0  # 아랫부분 자르기
-            # person_mask[:, :int(x1 - 3 * w)] = 0 # 왼쪽부분 자르기
-            # person_mask[:, int(x2 + 3 * w) :] = 0 # 오른쪽부분 자르기
-            # person_mask[: int(y1 - 2 * h), : int(x1 - 3 * w)] = 0
-            # person_mask[int(y2 + 2 * h) :, int(x2 - 3 * w) :] = 0
 
-            print("☆★" * 20)
-            print(person_mask.shape, person_mask.min(), person_mask.max())
-            print(mask.shape, mask.min(), mask.max())
 
             # cv2.rectangle(person_mask, (int(x1 - 3 * w), int(y1 - 2 * h)), (int(x2 + 3 * w), int(y2)), 1, -1)
             # cv2.ellipse(mask, (int((x1 + x2) // 2), int(y2 * 0.97)), (int(dx), int(dy)), 0, 0, 180, 1, -1)

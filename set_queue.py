@@ -2,9 +2,9 @@ import math, cv2, random, torch, torchvision, json, os
 import numpy as np
 import nodes, folder_paths  # 기본노드, 파일로드
 from . import wildcards
-from . import prompts_maker
-from openpyxl import load_workbook
-from openpyxl.styles import Alignment
+# from . import prompts_maker
+# from openpyxl import load_workbook
+# from openpyxl.styles import Alignment
 
 # class name:
 #     def __init__(self):
@@ -182,7 +182,7 @@ class abyz22_SetQueue:
             Bool_trigger_queue = False
             cur_prompts, cur_batch = 0, 0
             self.highest_num, self.prompt = 0, ""
-            self.debug = "11111"
+            self.debug = "Prompt testing...."
 
         elif cur_prompts < kwargs["Num_of_Prompts"]:  # 폴더 별
             if (cur_batch + kwargs["batch_size"]) < kwargs["image_per_Prompt"]:  # 폴더내 생성해야될 이미지 더 있으면
