@@ -8,9 +8,9 @@ from .non_switch import *
 NODE_CLASS_MAPPINGS = {
     "abyz22_Padding Image": abyz22_Pad_Image,
     "abyz22_ImpactWildcardEncode": abyz22_ImpactWildcardEncode,
-    "abyz22_Ksampler": abyz22_KSampler,
-    "abyz22_ToBasicPipe": abyz22_ToBasicPipe,
-    "abyz22_FromBasicPipe_v2": abyz22_FromBasicPipe_v2,
+    # "abyz22_Ksampler": abyz22_KSampler,
+    # "abyz22_ToBasicPipe": abyz22_ToBasicPipe,
+    # "abyz22_FromBasicPipe_v2": abyz22_FromBasicPipe_v2,
     "abyz22_setimageinfo": abyz22_setimageinfo,
     "abyz22_SaveImage":abyz22_SaveImage,
     "abyz22_ImpactWildcardEncode_GetPrompt":abyz22_ImpactWildcardEncode_GetPrompt,
@@ -24,11 +24,10 @@ NODE_CLASS_MAPPINGS = {
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "abyz22_Padding Image": "abyz22_Padding Image",
-    "abyz22_Padding Image2": "abyz22_Padding Image2",
     "abyz22_ImpactWildcardEncode": "abyz22_ImpactWildcardEncode",
-    "abyz22_Ksampler": "abyz22_Ksampler",
-    "abyz22_ToBasicPipe": "abyz22_ToBasicPipe",
-    "abyz22_FromBasicPipe_v2": "abyz22_FromBasicPipe_v2",
+    # "abyz22_Ksampler": "abyz22_Ksampler",
+    # "abyz22_ToBasicPipe": "abyz22_ToBasicPipe",
+    # "abyz22_FromBasicPipe_v2": "abyz22_FromBasicPipe_v2",
     "abyz22_setimageinfo": "abyz22_setimageinfo",
     "abyz22_SaveImage" : "abyz22_SaveImage",
     "abyz22_ImpactWildcardEncode_GetPrompt":"abyz22_ImpactWildcardEncode_GetPrompt",

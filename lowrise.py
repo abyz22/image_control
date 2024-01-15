@@ -60,10 +60,18 @@ class abyz22_drawmask:
             "required": {
                 "segs": ("SEGS",),
                 "dx": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
-                "dy": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
-                "dy2": ("FLOAT", {"default": 0.5, "min": -1.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
-            },  # (1,768,512)  앞에 n 있음
+                "dy": ("FLOAT", {"default": 0.5, "min": -2.0, "max": 2.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "dy2": ("FLOAT", {"default": 0.5, "min": -2.0, "max": 2.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "mode_type": (
+                    [
+                        "Waist-detect",
+                        "pussy-detect",
+                    ],
+                ),
+            },
+            "optional": {"person_SEGS": ("SEGS",)},
         }
+        # (1,768,512)  앞에 n 있음
 
     RETURN_TYPES = ("MASK",)
     RETURN_NAMES = ("mask",)
@@ -76,7 +84,7 @@ class abyz22_drawmask:
         obj = nodes.NODE_CLASS_MAPPINGS["ImpactSEGSToMaskBatch"]()
         mask = obj.doit(kwargs["segs"])[0]
         if torch.all(mask[0] == 0):
-            return mask
+            return (mask,)
         y1, x1, y2, x2 = find_white_bbox(mask[0].numpy())  # x1,y1,x2,y2
         w = x2 - x1
         h = y2 - y1
@@ -84,14 +92,33 @@ class abyz22_drawmask:
         dx = int(w * kwargs["dx"])
         dy = int(h * kwargs["dy"])
         dy2 = y2 - int(h * kwargs["dy2"])
+        if kwargs["mode_type"] == "Waist-detect":
+            mask = mask.numpy()[0]
+            mask[: int((y1 + y2) // 2)] = 0
 
-        mask = mask.numpy()[0]
-        mask[: int((y1 + y2) // 2)] = 0
+            cv2.ellipse(mask, ((x1 + x2) // 2, int(y2 * 0.97)), (dx, dy), 0, 0, 180, 1, -1)
 
-        # dr.ellipse((x1 + dx, vy - dy, x2 - dx, vy + dy), fill=255)
-        cv2.ellipse(mask, ((x1 + x2) // 2, int(y2 * 0.97)), (dx, dy), 0, 0, 180, 1, -1)
-        # 직사각형 그리기
-        cv2.rectangle(mask, (x1, int(y2 * 0.95)), (x2, dy2), 1, -1)
+            cv2.rectangle(mask, (x1, int(y2 * 0.95)), (x2, dy2), 1, -1)
+        elif kwargs["mode_type"] == "pussy-detect":
+            mask = mask.numpy()[0]
+
+            person_mask = obj.doit(kwargs["person_SEGS"])[0]
+
+            person_mask = person_mask.numpy()[0]
+            person_mask[: int(y1 - kwargs["dy"] * h), :] = 0  # 윗부분 자르기
+            person_mask[int(y1 - kwargs["dy2"] * h) :, :] = 0  # 아랫부분 자르기
+            # person_mask[:, :int(x1 - 3 * w)] = 0 # 왼쪽부분 자르기
+            # person_mask[:, int(x2 + 3 * w) :] = 0 # 오른쪽부분 자르기
+            # person_mask[: int(y1 - 2 * h), : int(x1 - 3 * w)] = 0
+            # person_mask[int(y2 + 2 * h) :, int(x2 - 3 * w) :] = 0
+
+            print("☆★" * 20)
+            print(person_mask.shape, person_mask.min(), person_mask.max())
+            print(mask.shape, mask.min(), mask.max())
+
+            # cv2.rectangle(person_mask, (int(x1 - 3 * w), int(y1 - 2 * h)), (int(x2 + 3 * w), int(y2)), 1, -1)
+            # cv2.ellipse(mask, (int((x1 + x2) // 2), int(y2 * 0.97)), (int(dx), int(dy)), 0, 0, 180, 1, -1)
+            mask = person_mask
 
         mask = np.array(mask)
         mask = torch.tensor(mask).unsqueeze(0)
@@ -161,17 +188,18 @@ class abyz22_blend_onecolor:
 
     def run(sefl, *args, **kwargs):
         obj = nodes.NODE_CLASS_MAPPINGS["Image Blend by Mask"]()
-        
+
         # one_color = torch.zeros_like(kwargs["imageA"])
         one_color = torch.ones_like(kwargs["imageA"])
 
-        one_color[:, :,:,0].fill_(kwargs["R"]/255.0)
-        one_color[:, :,:,1].fill_(kwargs["G"]/255.0)
-        one_color[:, :,:,2].fill_(kwargs["B"]/255.0)
-
+        one_color[:, :, :, 0].fill_(kwargs["R"] / 255.0)
+        one_color[:, :, :, 1].fill_(kwargs["G"] / 255.0)
+        one_color[:, :, :, 2].fill_(kwargs["B"] / 255.0)
 
         for i in range(kwargs["imageA"].shape[0]):
-            image = obj.image_blend_mask(kwargs["imageA"][i].unsqueeze(0), one_color[i].unsqueeze(0), kwargs["mask"][i].unsqueeze(0), kwargs["blend_percentage"])[0]
+            image = obj.image_blend_mask(
+                kwargs["imageA"][i].unsqueeze(0), one_color[i].unsqueeze(0), kwargs["mask"][i].unsqueeze(0), kwargs["blend_percentage"]
+            )[0]
             if i == 0:
                 images = image
             else:
