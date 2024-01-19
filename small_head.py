@@ -82,9 +82,6 @@ class abyz22_smallhead:
 
     def run(sefl, *args, **kwargs):  # image= 1,768,512,3   mask= n,1,h,w
         images, mask = None, None
-        print("☆★ " * 10)
-        print(len(kwargs["segs"]))
-        print(kwargs["segs"][0].shape)
         if len(kwargs["segs"]) == 1:
             kwargs["segs"] = kwargs["segs"][0]
         for i in range(kwargs["image"].shape[0]):
@@ -93,12 +90,15 @@ class abyz22_smallhead:
             w = x2 - x1
             h = y2 - y1
 
+            image = kwargs["image"][i]
             face = kwargs["image"][i].clone()
 
             face_cropped = face * kwargs["segs"][i]
             if kwargs["empty_space"] == "noise":
+                image[y1:y2, x1:x2, :] = torch.rand_like(image[y1:y2, x1:x2, :])
                 face_noised = torch.rand_like(face) * -1 * (kwargs["segs"] - 1)[i]
             elif kwargs["empty_space"] == "black":
+                image[y1:y2, x1:x2, :] = torch.zeros_like(image[y1:y2, x1:x2, :])
                 face_noised = torch.zeros_like(face) * -1 * (kwargs["segs"] - 1)[i]
             face_cropped = face_cropped + face_noised
 
@@ -108,9 +108,7 @@ class abyz22_smallhead:
             )  # 3,768,512 -> 768,512,3
 
             h, w, c = face_resized.shape
-            image = kwargs["image"][i]
 
-            image[y1:y2, x1:x2, :] = torch.rand_like(image[y1:y2, x1:x2, :])
             image[y2 - h : y2, int((x1 + x2) // 2 - w // 2) : int((x1 + x2) // 2 - w // 2) + w, :] = face_resized
 
             # mask 출력
@@ -135,14 +133,6 @@ class abyz22_smallhead:
             if kwargs["model_detector"]:
                 mask[:, :y1, x1:x2] = 1
 
-            """
-            1. 검정배경 생성
-            2. 흰색 대가리 작게 생성
-            3. 작은 흰색대가리 검정배경에 붙이기
-            4. 값 반전 (검정 대가리, 흰배경)
-            5. 상하좌우 값 검정으로 만들기
-            """
-
             if i == 0:
                 images = image.unsqueeze(0)
                 masks = mask
@@ -154,7 +144,6 @@ class abyz22_smallhead:
         masks = torchvision.transforms.GaussianBlur(kernel_size=kwargs["kernel_size"] * 2 + 1, sigma=kwargs["sigma"])(masks)
         if masks.shape[0] ==1:
             masks=masks.unsqueeze(0)
-        print(masks.shape)
         return (
             images,
             masks,
