@@ -5,6 +5,8 @@
 ## Resize Head
 
 
+
+
 ### Workflow
-https://github.com/abyz22/image_control/blob/master/sample.png
-<img src="sample.png">
+https://github.com/abyz22/image_control/blob/master/imgs/sample.png
+<img src="./sample.png">
