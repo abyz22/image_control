@@ -2,7 +2,11 @@ import math, cv2, random, torch, torchvision, json, os
 import numpy as np
 import nodes, folder_paths  # 기본노드, 파일로드
 from . import wildcards
-if os.path.isfile('./custom_nodes/comfyUI_abyz22/prompts_maker.py'):
+from .utils import any_typ
+from server import PromptServer
+from . import utils
+
+if os.path.isfile("./custom_nodes/comfyUI_abyz22/prompts_maker.py"):
     from . import prompts_maker
     from openpyxl import load_workbook
     from openpyxl.styles import Alignment
@@ -148,7 +152,7 @@ class abyz22_SetQueue:
                 self.highest_num = file_list[0] + 1
 
             if self.cur_batch == 0:  # 돌고돌아 현재 폴더 배치0되면(처음)
-                if (kwargs["Num_of_Prompts"] == 1) and (kwargs["prompt"] !=""): # 폴더1개만이고 프롬프트 있으면,
+                if (kwargs["Num_of_Prompts"] == 1) and (kwargs["prompt"] != ""):  # 폴더1개만이고 프롬프트 있으면,
                     self.prompt = kwargs["prompt"]
                 else:
                     self.prompt = prompts_maker.make_prompt(mode=kwargs["mode_type"], etc=self.cur_prompts)
@@ -204,3 +208,125 @@ class abyz22_SetQueue:
 
         self.cur_prompts, self.cur_batch = cur_prompts, cur_batch
         return Bool_trigger_queue, new_path, self.prompt, cur_prompts, cur_batch, self.debug
+
+
+def workflow_to_map(workflow):
+    nodes = {}
+    links = {}
+    for link in workflow["links"]:
+        links[link[0]] = link[1:]
+    for node in workflow["nodes"]:
+        nodes[str(node["id"])] = node
+
+    return nodes, links
+
+
+class abyz22_bypass:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "value": (any_typ,),
+                "mode": ("BOOLEAN", {"default": True, "label_on": "Active", "label_off": "Mute/Bypass"}),
+                "behavior": ("BOOLEAN", {"default": True, "label_on": "Mute", "label_off": "Bypass"}),
+                "prob": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+            },
+            "hidden": {"unique_id": "UNIQUE_ID", "prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
+        }
+
+    FUNCTION = "doit"
+
+    RETURN_TYPES = (any_typ,)
+    RETURN_NAMES = ("value",)
+    OUTPUT_NODE = True
+    CATEGORY = "abyz22"
+
+    @classmethod
+    def IS_CHANGED(self, value, mode, behavior=True, unique_id=None, prompt=None, extra_pnginfo=None):
+        nodes, links = workflow_to_map(extra_pnginfo["workflow"])
+
+        next_nodes = []
+
+        for link in nodes[unique_id]["outputs"][0]["links"]:
+            node_id = str(links[link][2])
+            utils.collect_non_reroute_nodes(nodes, links, next_nodes, node_id)
+
+        return next_nodes
+
+    def doit(self, value, mode, behavior=True, prob=0.5, unique_id=None, prompt=None, extra_pnginfo=None):
+        global error_skip_flag
+
+        nodes, links = workflow_to_map(extra_pnginfo["workflow"])
+
+        active_nodes = []
+        mute_nodes = []
+        bypass_nodes = []
+
+        for link in nodes[unique_id]["outputs"][0]["links"]:
+            node_id = str(links[link][2])
+
+            next_nodes = []
+            utils.collect_non_reroute_nodes(nodes, links, next_nodes, node_id)
+
+            for next_node_id in next_nodes:
+                node_mode = nodes[next_node_id]["mode"]
+
+                if node_mode == 0:
+                    active_nodes.append(next_node_id)
+                elif node_mode == 2:
+                    mute_nodes.append(next_node_id)
+                elif node_mode == 4:
+                    bypass_nodes.append(next_node_id)
+
+        if (mode == False) and (random.random() < prob):
+            if behavior:  # mute
+                should_be_mute_nodes = active_nodes + bypass_nodes
+                if len(should_be_mute_nodes) > 0:
+                    PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, "mutes": list(should_be_mute_nodes)})
+                    error_skip_flag = True
+                    raise Exception(
+                        "IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it."
+                    )
+            else:  # bypass
+                should_be_bypass_nodes = active_nodes + mute_nodes
+                if len(should_be_bypass_nodes) > 0:
+                    PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, "bypasses": list(should_be_bypass_nodes)})
+                    error_skip_flag = True
+                    raise Exception(
+                        "IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it."
+                    )
+        else:
+            # active
+            should_be_active_nodes = mute_nodes + bypass_nodes
+            if len(should_be_active_nodes) > 0:
+                PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, "actives": list(should_be_active_nodes)})
+                error_skip_flag = True
+                raise Exception(
+                    "IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it."
+                )
+
+        # if mode:
+        #     # active
+        #     should_be_active_nodes = mute_nodes + bypass_nodes
+        #     if len(should_be_active_nodes) > 0:
+        #         PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, 'actives': list(should_be_active_nodes)})
+        #         error_skip_flag = True
+        #         raise Exception("IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it.")
+
+        # elif behavior:
+        #     # mute
+        #     should_be_mute_nodes = active_nodes + bypass_nodes
+        #     if len(should_be_mute_nodes) > 0:
+        #         PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, 'mutes': list(should_be_mute_nodes)})
+        #         error_skip_flag = True
+        #         raise Exception("IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it.")
+
+        # else:
+        #     # bypass
+        #     should_be_bypass_nodes = active_nodes + mute_nodes
+        #     if len(should_be_bypass_nodes) > 0:
+        #         PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, 'bypasses': list(should_be_bypass_nodes)})
+        #         error_skip_flag = True
+        #         raise Exception("IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it.")
+
+        return (value,)

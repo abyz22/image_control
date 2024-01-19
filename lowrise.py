@@ -72,7 +72,6 @@ class abyz22_drawmask:
             },
             "optional": {"person_SEGS": ("SEGS",)},
         }
-        # (1,768,512)  앞에 n 있음
 
     RETURN_TYPES = ("MASK",)
     RETURN_NAMES = ("mask",)
