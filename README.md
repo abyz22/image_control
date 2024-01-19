@@ -7,4 +7,4 @@
 
 ### Workflow
 https://github.com/abyz22/image_control/blob/master/sample.png
-<img src=".sample.png">
+<img src="sample.png">
