@@ -63,8 +63,16 @@ class abyz22_Pad_Image:
     CATEGORY = "abyz22"
 
     def run(self, image, vae, conditioning, control_net_name, pose_strength, mode_type, Ratio_min, Ratio_max, pad_mode,seed):  # image= 1,768,512,3
+        np.random.seed(seed)
+        random.seed(seed)
         if Ratio_min > Ratio_max:
             Ratio_min, Ratio_max = Ratio_max, Ratio_min
+        Resize_bys = np.random.uniform(Ratio_min, Ratio_max, image.shape[0]).round(2)
+
+        if np.all(Resize_bys>0.9999) and np.all(Resize_bys<1.0000001):
+            latent = nodes.VAEEncode().encode(vae, image)[0]
+            return (image,image,conditioning,latent)
+
         obj = nodes.NODE_CLASS_MAPPINGS["DWPreprocessor"]()
         resolution = normalize_size_base_64(image.shape[2], image.shape[1])
         pose_image = obj.estimate_pose(
@@ -72,88 +80,81 @@ class abyz22_Pad_Image:
         )["result"][0]
 
         # Resize_by = random.uniform(Ratio_min, Ratio_max)
-        np.random.seed(seed)
-        random.seed(seed)
-        Resize_bys = np.random.uniform(Ratio_min, Ratio_max, image.shape[0]).round(2)
         for i, Resize_by in enumerate(Resize_bys):
-            if Resize_by > 0.9999 and Resize_by < 1.0001:
-                padded_image = image[i].unsqueeze(0)
-                padded_pose_image = pose_image[i].unsqueeze(0)
-            else:
-                x, y = int(image.shape[2] * Resize_by), int(image.shape[1] * Resize_by)
-                resized_image = torchvision.transforms.Resize((y, x))(image[i].permute(2, 0, 1))  # 768,512,3 -> 3,768,512
-                resized_pose_image = torchvision.transforms.Resize((y, x), interpolation=torchvision.transforms.InterpolationMode.NEAREST)(
-                    pose_image[i].permute(2, 0, 1)
-                )  # 1,3,768,512
+            x, y = int(image.shape[2] * Resize_by), int(image.shape[1] * Resize_by)
+            resized_image = torchvision.transforms.Resize((y, x))(image[i].permute(2, 0, 1))  # 768,512,3 -> 3,768,512
+            resized_pose_image = torchvision.transforms.Resize((y, x), interpolation=torchvision.transforms.InterpolationMode.NEAREST)(
+                pose_image[i].permute(2, 0, 1)
+            )  # 1,3,768,512
 
-                # image = n,768,512,3
-                # resized_image = 3,768,512
-                dx, dy = abs(image.shape[2] - resized_image.shape[2]), abs(image.shape[1] - resized_image.shape[1])
-                rdx, rdy = random.randint(0, dx), random.randint(0, dy)
-                if Resize_by < 1:
-                    mode_list = {
-                        "Top-Left": (0, dx, 0, dy),
-                        "Top": (int(round(dx / 2)), int(round(dx / 2)) + 1, 0, dy),
-                        "Top-Right": (dx, 0, 0, dy),
-                        "Center-Left": (0, dx, round(int(dy / 2)), int(round(dy / 2))),
-                        "Center": (int(round(dx / 2)), int(round(dx / 2)), int(round(dy / 2)), int(round(dy / 2))),
-                        "Center-Right": (dx, 0, int(round(dy / 2)), int(round(dy / 2))),
-                        "Bottom-Left": (0, dx, dy, 0),
-                        "Bottom": (int(round(dx / 2)), int(round(dx / 2)), dy, 0),
-                        "Bottom-Right": (dx, 0, dy, 0),
-                        "Random": (rdx, dx - rdx, rdy, dy - rdy),
-                    }
-                    padded_image = torch.rand_like(image[i].permute(2, 0, 1))  # 3, 768, 512
-                    padded_pose_image = torch.zeros_like(pose_image[i].permute(2, 0, 1))
+            # image = n,768,512,3
+            # resized_image = 3,768,512
+            dx, dy = abs(image.shape[2] - resized_image.shape[2]), abs(image.shape[1] - resized_image.shape[1])
+            rdx, rdy = random.randint(0, dx), random.randint(0, dy)
+            if Resize_by < 1:
+                mode_list = {
+                    "Top-Left": (0, dx, 0, dy),
+                    "Top": (int(round(dx / 2)), int(round(dx / 2)) + 1, 0, dy),
+                    "Top-Right": (dx, 0, 0, dy),
+                    "Center-Left": (0, dx, round(int(dy / 2)), int(round(dy / 2))),
+                    "Center": (int(round(dx / 2)), int(round(dx / 2)), int(round(dy / 2)), int(round(dy / 2))),
+                    "Center-Right": (dx, 0, int(round(dy / 2)), int(round(dy / 2))),
+                    "Bottom-Left": (0, dx, dy, 0),
+                    "Bottom": (int(round(dx / 2)), int(round(dx / 2)), dy, 0),
+                    "Bottom-Right": (dx, 0, dy, 0),
+                    "Random": (rdx, dx - rdx, rdy, dy - rdy),
+                }
+                padded_image = torch.rand_like(image[i].permute(2, 0, 1))  # 3, 768, 512
+                padded_pose_image = torch.zeros_like(pose_image[i].permute(2, 0, 1))
 
-                    if pad_mode == "noise":
-                        padded_image[
-                            :,
-                            mode_list[mode_type][2] : mode_list[mode_type][2] + resized_image.shape[1],
-                            mode_list[mode_type][0] : mode_list[mode_type][0] + resized_image.shape[2],
-                        ] = resized_image
-                        padded_image = padded_image.permute(1, 2, 0).unsqueeze(0)  # 원상복구 768,512,3 후 1,768,512,3
-                        padded_pose_image[
-                            :,
-                            mode_list[mode_type][2] : mode_list[mode_type][2] + resized_image.shape[1],
-                            mode_list[mode_type][0] : mode_list[mode_type][0] + resized_image.shape[2],
-                        ] = resized_pose_image
-                        padded_pose_image = padded_pose_image.permute(1, 2, 0).unsqueeze(0)
-                    else:
-                        padded_image = torch.nn.functional.pad(resized_image, (mode_list[mode_type]), mode=pad_mode).permute(1, 2, 0).unsqueeze(0)
-                        padded_pose_image = (
-                            torch.nn.functional.pad(resized_pose_image, (mode_list[mode_type]), mode=pad_mode).permute(1, 2, 0).unsqueeze(0)
-                        )
-                elif Resize_by > 1:
-                    o_h, o_w = image.shape[1], image.shape[2]
-                    r_h, r_w = resized_image.shape[1], resized_image.shape[2]
-                    mode_list = {
-                        "Top-Left": (0, o_w, 0, o_h),
-                        "Top": (int(round(dx / 2)), o_w + int(round(dx / 2)), 0, o_h),
-                        "Top-Right": (dx, r_w, 0, o_h),
-                        "Center-Left": (0, o_w, int(round(dy / 2)), o_h + int(round(dy / 2))),
-                        "Center": (int(round(dx / 2)), o_w + int(round(dx / 2)), int(round(dy / 2)), o_h + int(round(dy / 2))),
-                        "Center-Right": (dx, r_w, int(round(dy / 2)), o_h + int(round(dy / 2))),
-                        "Bottom-Left": (0, o_w, dy, r_h),
-                        "Bottom": (int(round(dx / 2)), o_w + int(round(dx / 2)), dy, r_h),
-                        "Bottom-Right": (dx, r_w, dy, r_h),
-                        "Random": (rdx, o_w + rdx, rdy, o_h + rdy),
-                    }
-                    padded_image = torch.rand_like(image[0].permute(2, 0, 1))  # 3,768,512
-                    padded_pose_image = torch.zeros_like(pose_image[0].permute(2, 0, 1))
-
-                    padded_image = resized_image[
+                if pad_mode == "noise":
+                    padded_image[
                         :,
-                        mode_list[mode_type][2] : mode_list[mode_type][3],
-                        mode_list[mode_type][0] : mode_list[mode_type][1],
-                    ]
-                    padded_pose_image = resized_pose_image[
+                        mode_list[mode_type][2] : mode_list[mode_type][2] + resized_image.shape[1],
+                        mode_list[mode_type][0] : mode_list[mode_type][0] + resized_image.shape[2],
+                    ] = resized_image
+                    padded_image = padded_image.permute(1, 2, 0).unsqueeze(0)  # 원상복구 768,512,3 후 1,768,512,3
+                    padded_pose_image[
                         :,
-                        mode_list[mode_type][2] : mode_list[mode_type][3],
-                        mode_list[mode_type][0] : mode_list[mode_type][1],
-                    ]
-                    padded_image = padded_image.permute(1, 2, 0).unsqueeze(0)
+                        mode_list[mode_type][2] : mode_list[mode_type][2] + resized_image.shape[1],
+                        mode_list[mode_type][0] : mode_list[mode_type][0] + resized_image.shape[2],
+                    ] = resized_pose_image
                     padded_pose_image = padded_pose_image.permute(1, 2, 0).unsqueeze(0)
+                else:
+                    padded_image = torch.nn.functional.pad(resized_image, (mode_list[mode_type]), mode=pad_mode).permute(1, 2, 0).unsqueeze(0)
+                    padded_pose_image = (
+                        torch.nn.functional.pad(resized_pose_image, (mode_list[mode_type]), mode=pad_mode).permute(1, 2, 0).unsqueeze(0)
+                    )
+            elif Resize_by > 1:
+                o_h, o_w = image.shape[1], image.shape[2]
+                r_h, r_w = resized_image.shape[1], resized_image.shape[2]
+                mode_list = {
+                    "Top-Left": (0, o_w, 0, o_h),
+                    "Top": (int(round(dx / 2)), o_w + int(round(dx / 2)), 0, o_h),
+                    "Top-Right": (dx, r_w, 0, o_h),
+                    "Center-Left": (0, o_w, int(round(dy / 2)), o_h + int(round(dy / 2))),
+                    "Center": (int(round(dx / 2)), o_w + int(round(dx / 2)), int(round(dy / 2)), o_h + int(round(dy / 2))),
+                    "Center-Right": (dx, r_w, int(round(dy / 2)), o_h + int(round(dy / 2))),
+                    "Bottom-Left": (0, o_w, dy, r_h),
+                    "Bottom": (int(round(dx / 2)), o_w + int(round(dx / 2)), dy, r_h),
+                    "Bottom-Right": (dx, r_w, dy, r_h),
+                    "Random": (rdx, o_w + rdx, rdy, o_h + rdy),
+                }
+                padded_image = torch.rand_like(image[0].permute(2, 0, 1))  # 3,768,512
+                padded_pose_image = torch.zeros_like(pose_image[0].permute(2, 0, 1))
+
+                padded_image = resized_image[
+                    :,
+                    mode_list[mode_type][2] : mode_list[mode_type][3],
+                    mode_list[mode_type][0] : mode_list[mode_type][1],
+                ]
+                padded_pose_image = resized_pose_image[
+                    :,
+                    mode_list[mode_type][2] : mode_list[mode_type][3],
+                    mode_list[mode_type][0] : mode_list[mode_type][1],
+                ]
+                padded_image = padded_image.permute(1, 2, 0).unsqueeze(0)
+                padded_pose_image = padded_pose_image.permute(1, 2, 0).unsqueeze(0)
 
             if i == 0:
                 final_image = padded_image
