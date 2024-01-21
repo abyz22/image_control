@@ -69,7 +69,7 @@ class abyz22_Pad_Image:
             Ratio_min, Ratio_max = Ratio_max, Ratio_min
         Resize_bys = np.random.uniform(Ratio_min, Ratio_max, image.shape[0]).round(2)
 
-        if np.all(Resize_bys>0.9999) and np.all(Resize_bys<1.0000001):
+        if np.all(Resize_bys>0.9999999) and np.all(Resize_bys<1.0000001):
             latent = nodes.VAEEncode().encode(vae, image)[0]
             return (image,image,conditioning,latent)
 

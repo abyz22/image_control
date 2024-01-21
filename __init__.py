@@ -5,6 +5,7 @@ from .set_queue import *
 from .lowrise import *
 from .non_switch import *
 from .small_head import *
+from .outpainting_lama import *
 
 NODE_CLASS_MAPPINGS = {
     "abyz22_Padding Image": abyz22_Pad_Image,
@@ -22,6 +23,7 @@ NODE_CLASS_MAPPINGS = {
     "abyz22_blend_onecolor":abyz22_blend_onecolor,
     "abyz22_bypass":abyz22_bypass,
     "abyz22_smallhead":abyz22_smallhead,
+    "abyz22_lamaPreprocessor":abyz22_lamaPreprocessor,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
@@ -41,4 +43,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "abyz22_blend_onecolor":"abyz22_blend_onecolor",
     "abyz22_bypass":"abyz22_bypass",
     "abyz22_smallhead":"abyz22_smallhead",
+    "abyz22_lamaPreprocessor":"abyz22_lamaPreprocessor",
 }
