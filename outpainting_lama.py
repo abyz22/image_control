@@ -338,8 +338,8 @@ class abyz22_lamaPreprocessor:
                 "Right": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
                 "Up": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
                 "Down": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
-                "Ratio_min": ("FLOAT", {"default": 0.5, "min": 0.3, "max": 2.5, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
-                "Ratio_max": ("FLOAT", {"default": 1.5, "min": 0.3, "max": 2.5, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
+                "Ratio_min": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.5, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "Ratio_max": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.5, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
         }
@@ -363,60 +363,104 @@ class abyz22_lamaPreprocessor:
         self, pixels: torch.Tensor, vae, mode_type, Left=0, Right=0, Up=0, Down=0, Ratio_min=0.0, Ratio_max=0.0, seed=0
     ):  # pixel= 1,768,512,3
         # 모드 설정
-        if mode_type == "Random":
-            np.random.seed(seed)
-            random.seed(seed)
-            Ratio = np.random.uniform(Ratio_min, Ratio_max, pixels.shape[0]).round(2)
-            Up, Left = int(pixels.shape[1] * (1 + Ratio[0])), int(pixels.shape[2] * (1 + Ratio[1]))
+        np.random.seed(seed)
+        random.seed(seed)
+        if Ratio_min > Ratio_max:
+            Ratio_min, Ratio_max = Ratio_max, Ratio_min
+        Ratio = round(np.random.uniform(Ratio_min, Ratio_max),2)
 
         print(" ☆★" * 20)
         model_lama = LamaInpainting()
-        imgs = None
+        imgs,masks = None,None
+
         for i in range(pixels.shape[0]):
-            # 이미지 패딩 씌우기
-            # image = torch.zeros(( pixels.shape[1] + Up + Down, pixels.shape[2] + Left + Right, pixels.shape[3]))
-            image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2] + Left + Right, pixels.shape[3]))
-            image[Up : Up + pixels.shape[1], Left : Left + pixels.shape[2], :] = pixels[i, :, :, :]
+            if mode_type == "Random":
+                ratio_h = round(np.random.uniform(0, Ratio),2)
+                ratio_w = round(np.random.uniform(0, Ratio),2)
+                print('ratio : ', ratio_h,ratio_w)
+                Up, Left = int(round(pixels.shape[1] * ratio_h)), int(round(pixels.shape[2] * ratio_w))
+                Down, Right = int(round(pixels.shape[1]*Ratio - Up)), int(round(pixels.shape[2]*Ratio - Left))
 
-            # 마스크 제작하기
-            mask = torch.ones_like(image[:, :, 0:1])
-            mask[Up : Up + pixels.shape[1], Left : Left + pixels.shape[2], :] = 0
+            copy_img = pixels.clone()[i, :, :, :]
+            if Up + Down > 0:
+                image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2], pixels.shape[3]))
+                image[Up : Up + pixels.shape[1], :, :] = copy_img
 
-            # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
-            image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
-            image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
+                # 마스크 제작하기
+                mask = torch.ones_like(image[:, :, 0:1])
+                mask[Up : Up + pixels.shape[1], :, :] = 0
 
-            # lama에 이미지+마스크 넣기
-            prd_color = model_lama(image_lama)
-            print(image_lama.shape, prd_color.shape)
-            # 이미지 크기 원상복구
-            prd_color = remove_pad(prd_color)
-            prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
+                # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
+                image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
+                image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
 
-            raw_mask = image_with_alpha[:, :, 3:4]
-            mask_alpha = raw_mask > 0
-            # add alpha channel to the image
-            final_img_with_alpha = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.float32)
-            final_img_with_alpha[:, :, 3] = np.where(mask_alpha.squeeze(), 255, 0)
-            final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, image_with_alpha[:, :, 0:3])
+                # lama에 이미지+마스크 넣기
+                prd_color = model_lama(image_lama)
+                # print("Up+Down :", image_lama.shape, prd_color.shape)
+                # 이미지 크기 원상복구
+                prd_color = remove_pad(prd_color)
+                prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
+
+                raw_mask = image_with_alpha[:, :, 3:4]
+                mask_alpha = raw_mask > 0
+                # add alpha channel to the image
+                final_img_with_alpha = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.float32)
+                final_img_with_alpha[:, :, 3] = np.where(mask_alpha.squeeze(), 255, 0)
+                final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, image_with_alpha[:, :, 0:3])
+                copy_img = torch.from_numpy(final_img_with_alpha[:, :, 0:3]) / 255.0
+
+            if Left + Right > 0:
+                image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2] + Left + Right, pixels.shape[3]))
+                image[:, Left : Left + pixels.shape[2], :] = copy_img
+
+                # 마스크 제작하기
+                mask = torch.ones_like(image[:, :, 0:1])
+                mask[:, Left : Left + pixels.shape[2], :] = 0
+
+                # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
+                image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
+                image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
+
+                # lama에 이미지+마스크 넣기
+                prd_color = model_lama(image_lama)
+                # print("Left+Right", image_lama.shape, prd_color.shape)
+
+                # 이미지 크기 원상복구
+                prd_color = remove_pad(prd_color)
+                prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
+
+                raw_mask = image_with_alpha[:, :, 3:4]
+                mask_alpha = raw_mask > 0
+                # add alpha channel to the image
+                final_img_with_alpha = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.float32)
+                final_img_with_alpha[:, :, 3] = np.where(mask_alpha.squeeze(), 255, 0)
+                final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, image_with_alpha[:, :, 0:3])
 
             final_img_with_alpha = final_img_with_alpha[np.newaxis, :]
+            # print(final_img_with_alpha.shape)
+
+            mask = torch.ones_like(image[:, :, 0:1])
+            mask[Up : Up + pixels.shape[1], Left : Left + pixels.shape[2], :] = 0
+            mask=mask.permute(2,0,1).unsqueeze(0)
             if i == 0:
                 imgs = final_img_with_alpha
+                masks=mask
             else:
                 imgs = np.concatenate([imgs, final_img_with_alpha])
+                masks=torch.cat([masks,mask])
+
 
         image = (torch.from_numpy(imgs).float() / 255.0).clone().to("cuda" if torch.cuda.is_available() else "cpu")
 
         # 이미지 encode 넣고, masking 씌우기
         encoded_image = self._encode_image(vae, image)
         encoded_image_dict = {"samples": encoded_image.cpu()}
-        mask = torch.ones_like(image[:, :, :, 0:1])
-        encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask[:, :, :, 0])[0]
+        mask_with_1 = torch.ones_like(image[:, :, :, 0])
+        encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask_with_1)[0]
 
-        return (image[:, :, :, 0:3], encoded_image_dict, image)  # image= 1,h,w,c  0.0~1.0
+        return (image[:, :, :, 0:3], encoded_image_dict, masks.to("cuda" if torch.cuda.is_available() else "cpu"))  # image= 1,h,w,c  0.0~1.0
 
-    RETURN_TYPES = ("IMAGE", "LATENT", "IMAGE")
-    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", "test_image")
+    RETURN_TYPES = ("IMAGE", "LATENT", "MASK")
+    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", "mask")
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"
