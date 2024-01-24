@@ -2,8 +2,9 @@ import math, cv2, random, torch, torchvision
 import numpy as np
 import nodes, folder_paths  # 기본노드, 파일로드
 
-# padding1 conditioning 
+# padding1 conditioning
 # padding2 conditioning's'  (와카 여러개 된것 (프롬프트 여러개))
+
 
 def normalize_size_base_64(w, h):
     short_side = min(w, h)
@@ -41,7 +42,7 @@ class abyz22_Pad_Image:
                 ),
                 "Ratio_min": ("FLOAT", {"default": 0.5, "min": 0.3, "max": 2.5, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
                 "Ratio_max": ("FLOAT", {"default": 1.5, "min": 0.3, "max": 2.5, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
         }
 
@@ -62,22 +63,23 @@ class abyz22_Pad_Image:
 
     CATEGORY = "abyz22"
 
-    def run(self, image, vae, conditioning, control_net_name, pose_strength, mode_type, Ratio_min, Ratio_max, pad_mode,seed):  # image= 1,768,512,3
+    def run(self, image, vae, conditioning, control_net_name, pose_strength, mode_type, Ratio_min, Ratio_max, pad_mode, seed):  # image= 1,768,512,3
         np.random.seed(seed)
         random.seed(seed)
         if Ratio_min > Ratio_max:
             Ratio_min, Ratio_max = Ratio_max, Ratio_min
         Resize_bys = np.random.uniform(Ratio_min, Ratio_max, image.shape[0]).round(2)
 
-        if np.all(Resize_bys>0.9999999) and np.all(Resize_bys<1.0000001):
+        if np.all(Resize_bys > 0.9999999) and np.all(Resize_bys < 1.0000001):
             latent = nodes.VAEEncode().encode(vae, image)[0]
-            return (image,image,conditioning,latent)
+            return (image, image, conditioning, latent)
 
         obj = nodes.NODE_CLASS_MAPPINGS["DWPreprocessor"]()
         resolution = normalize_size_base_64(image.shape[2], image.shape[1])
         pose_image = obj.estimate_pose(
             image, "disable", "enable", "disable", resolution=resolution, bbox_detector="yolox_s.onnx", pose_estimator="dw-ss_ucoco.onnx"
         )["result"][0]
+        padded_image,padded_pose_image=None,None
 
         # Resize_by = random.uniform(Ratio_min, Ratio_max)
         for i, Resize_by in enumerate(Resize_bys):

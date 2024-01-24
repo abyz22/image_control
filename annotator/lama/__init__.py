@@ -22,7 +22,7 @@ os.makedirs(models_path, exist_ok=True)
 
 class LamaInpainting:
     model_dir = os.path.join(models_path, "lama")
-
+    print(model_dir)
     def __init__(self):
         self.model = None
         self.device = devices
@@ -55,8 +55,6 @@ class LamaInpainting:
 
     def __call__(self, input_image):
         from PIL import Image
-        print('☆★'*20)
-        print(self.model)
         if self.model is None:
             self.load_model()
         self.model.to(self.device)

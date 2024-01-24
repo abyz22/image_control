@@ -5,7 +5,7 @@ import cv2
 # https://github.com/advimman/lama
 import logging
 
-import torch
+import torch, torchvision, random
 
 import numpy as np
 import os
@@ -328,13 +328,19 @@ class abyz22_lamaPreprocessor:
             "required": {
                 "pixels": ("IMAGE",),
                 "vae": ("VAE",),
+                "mode_type": (
+                    [
+                        "add_manually",
+                        "Random",
+                    ],
+                ),
                 "Left": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
                 "Right": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
                 "Up": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
                 "Down": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
-            },
-            "optional": {
-                "mask": ("MASK",),
+                "Ratio_min": ("FLOAT", {"default": 0.5, "min": 0.3, "max": 2.5, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
+                "Ratio_max": ("FLOAT", {"default": 1.5, "min": 0.3, "max": 2.5, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
         }
 
@@ -343,7 +349,8 @@ class abyz22_lamaPreprocessor:
         wrapper = VAEWrapper(vae)
         image = image[:, :, :, 0:3]
         image_without_alpha = image.to(wrapper.vae.vae_dtype) * 2.0 - 1.0
-        image = rearrange(image_without_alpha, "1 w h c -> 1 c w h")
+        image = image_without_alpha.permute(0, 3, 1, 2)
+        # image = rearrange(image_without_alpha, "1 w h c -> 1 c w h")
         encoded_image = wrapper.encode_first_stage_(image)
         if torch.all(torch.isnan(encoded_image.mean())):
             print("All values produced are NANs, automatically upcasting dtype to float32")
@@ -352,149 +359,64 @@ class abyz22_lamaPreprocessor:
         vae_output = wrapper.get_first_stage_encoding_(encoded_image)
         return vae_output
 
-    def preprocess(self, pixels: torch.Tensor, vae, mask=None, Left=0, Right=0, Up=0, Down=0):
-        print("☆★" * 30)
-        global model_lama
-        if mask is not None:
-            mask = (mask.numpy() * 255).astype(np.float32)
-            mask = np.expand_dims(mask, -1)
-        if (Left != 0 or Right != 0 or Up != 0 or Down != 0) and mask is None:
-            # create an expansion mask
-            mask = np.ones((pixels.shape[1] + Up+Down, pixels.shape[2] + Left+Right, 1), dtype=np.float32)
-            # keep the image centered and add a padding with value 1 in the expansion dimenisons
-            mask[
-                Up : Up+ pixels.shape[1],
-                Left : Left + pixels.shape[2],
-            ] = 0
-            pixels_with_outpaint_mask = np.zeros((pixels.shape[1] + Up+Down, pixels.shape[2] + Left+Right, 4), dtype=np.float32)
-            pixels_with_outpaint_mask[
-                Up : Up + pixels.shape[1],
-                Left : Left + pixels.shape[2],
-                0:3,
-            ] = pixels
-            pixels = torch.from_numpy(pixels_with_outpaint_mask[np.newaxis, :])
-            # mask[0:vertical_expansion,0:horizontal_expansion]=1
-        if mask is None:
-            raise LaMaError()
-        if len(mask.shape) > 3:
-            mask = mask[0]
-        pixels = rearrange(pixels, "1 h w c -> h w c")
-        pixels = pixels.clone()
-        pixels = (pixels[:, :, :3].numpy() * 255).astype(np.uint8)
-        pixels = HWC3(pixels)
+    def preprocess(
+        self, pixels: torch.Tensor, vae, mode_type, Left=0, Right=0, Up=0, Down=0, Ratio_min=0.0, Ratio_max=0.0, seed=0
+    ):  # pixel= 1,768,512,3
+        # 모드 설정
+        if mode_type == "Random":
+            np.random.seed(seed)
+            random.seed(seed)
+            Ratio = np.random.uniform(Ratio_min, Ratio_max, pixels.shape[0]).round(2)
+            Up, Left = int(pixels.shape[1] * (1 + Ratio[0])), int(pixels.shape[2] * (1 + Ratio[1]))
 
-        # Create a boolean mask
-        mask_non_black = mask[:, :, 0] == 0
-        cv2.resize(mask, (((mask.shape[1]) // 8) * 8, ((mask.shape[0]) // 8) * 8), interpolation=3)  # find the non black pixel coordinates
-        coords = np.column_stack(np.nonzero(mask_non_black))
+        print(" ☆★" * 20)
+        model_lama = LamaInpainting()
+        imgs = None
+        for i in range(pixels.shape[0]):
+            # 이미지 패딩 씌우기
+            # image = torch.zeros(( pixels.shape[1] + Up + Down, pixels.shape[2] + Left + Right, pixels.shape[3]))
+            image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2] + Left + Right, pixels.shape[3]))
+            image[Up : Up + pixels.shape[1], Left : Left + pixels.shape[2], :] = pixels[i, :, :, :]
 
-        # find the min and max coordinates
-        y_min, y_max = np.min(coords[:, 0]), np.max(coords[:, 0])
-        x_min, x_max = np.min(coords[:, 1]), np.max(coords[:, 1])
+            # 마스크 제작하기
+            mask = torch.ones_like(image[:, :, 0:1])
+            mask[Up : Up + pixels.shape[1], Left : Left + pixels.shape[2], :] = 0
 
-        # crop the image where the non-black pixels are
-        img_non_black = pixels[y_min : y_max + 1, x_min : x_max + 1]
-        vertical_expansion = False
-        horizontal_expansion = False
-        h = ((mask.shape[0]) // 8) * 8
-        w = ((mask.shape[1]) // 8) * 8
-        if img_non_black.shape[0] != pixels.shape[0] or img_non_black.shape[1] != pixels.shape[1]:
-            if img_non_black.shape[0] != mask.shape[0]:
-                vertical_expansion = True
-            if img_non_black.shape[1] != mask.shape[1]:
-                horizontal_expansion = True
-            if horizontal_expansion:
-                if vertical_expansion:
-                    mask_horizontal = mask[:, x_min : x_max + 1]
-                    _, img = apply_border_noise(img_non_black, "outpainting", mask_horizontal, mask_horizontal.shape[0], mask_horizontal.shape[1])
-                else:
-                    _, img = apply_border_noise(img_non_black, "outpainting", mask, h, w)
-                H, W, C = img.shape
-                raw_mask = img[:, :, 3:4]  # test
-                res = 256  # Always use 256 since lama is trained on 256
-                image_res, remove_pad = resize_image_with_pad(img, res, skip_hwc3=True)
-                if model_lama is None:
-                    model_lama = LamaInpainting()
-                # apply model lama
-                try:
-                    prd_color = model_lama(image_res)
-                    # model_lama.unload_model()
-                except Exception as e:
-                    print(e)
-                    raise e
-                prd_color = remove_pad(prd_color)
-                prd_color = cv2.resize(prd_color, (W, H))
-                mask_alpha = raw_mask > 0
-                # add alpha channel to the image
-                final_img_with_alpha = np.zeros((H, W, 4), dtype=np.float32)
-                final_img_with_alpha[:, :, 3] = np.where(mask_alpha.squeeze(), 255, 0)
-                final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, img[:, :, 0:3])
-                img_non_black = final_img_with_alpha
-            if vertical_expansion:
-                if horizontal_expansion:
-                    mask_horizontal = mask
-                    _, img = apply_border_noise(img_non_black, "outpainting", mask_horizontal, mask_horizontal.shape[0], mask_horizontal.shape[1])
-                else:
-                    _, img = apply_border_noise(img_non_black, "outpainting", mask, h, w)
-                H, W, C = img.shape
+            # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
+            image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
+            image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
 
-                raw_mask = mask * 255  # img[:, :, 3:4]  # test
-                res = 256  # Always use 256 since lama is trained on 256
-                image_res, remove_pad = resize_image_with_pad(img, res, skip_hwc3=True)
-
-                if model_lama is None:
-                    model_lama = LamaInpainting()
-                # apply model lama
-                try:
-                    prd_color = model_lama(image_res)
-                    # model_lama.unload_model()
-                except Exception as e:
-                    print(e)
-                    raise e
-                prd_color = remove_pad(prd_color)
-                prd_color = cv2.resize(prd_color, (W, H))
-                mask_alpha = raw_mask > 0
-                # add alpha channel to the image
-                final_img_with_alpha = np.zeros((H, W, 4), dtype=np.float32)
-                final_img_with_alpha[:, :, 3] = np.where(mask_alpha.squeeze(), 255, 0)
-                final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, img[:, :, 0:3])
-        else:
-            _, img = apply_border_noise(img_non_black, "inpainting", mask, h, w)
-            H, W, C = img.shape
-
-            raw_mask = mask * 255  # img[:, :, 3:4]  # test
-            res = 256  # Always use 256 since lama is trained on 256
-            image_res, remove_pad = resize_image_with_pad(img, res, skip_hwc3=True)
-
-            if model_lama is None:
-                model_lama = LamaInpainting()
-            # apply model lama
-            try:
-                prd_color = model_lama(image_res)
-                # model_lama.unload_model()
-            except Exception as e:
-                print(e)
-                raise e
+            # lama에 이미지+마스크 넣기
+            prd_color = model_lama(image_lama)
+            print(image_lama.shape, prd_color.shape)
+            # 이미지 크기 원상복구
             prd_color = remove_pad(prd_color)
-            prd_color = cv2.resize(prd_color, (W, H))
+            prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
+
+            raw_mask = image_with_alpha[:, :, 3:4]
             mask_alpha = raw_mask > 0
             # add alpha channel to the image
-            final_img_with_alpha = np.zeros((H, W, 4), dtype=np.float32)
+            final_img_with_alpha = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.float32)
             final_img_with_alpha[:, :, 3] = np.where(mask_alpha.squeeze(), 255, 0)
-            final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, img[:, :, 0:3])
+            final_img_with_alpha[:, :, 0:3] = np.where(mask_alpha, prd_color, image_with_alpha[:, :, 0:3])
 
-        final_img = get_pytorch_control(final_img_with_alpha)
-        final_img = rearrange(final_img, ("1 c h w -> 1 h w c"))
-        encoded_image = self._encode_image(vae, final_img)
+            final_img_with_alpha = final_img_with_alpha[np.newaxis, :]
+            if i == 0:
+                imgs = final_img_with_alpha
+            else:
+                imgs = np.concatenate([imgs, final_img_with_alpha])
+
+        image = (torch.from_numpy(imgs).float() / 255.0).clone().to("cuda" if torch.cuda.is_available() else "cpu")
+
+        # 이미지 encode 넣고, masking 씌우기
+        encoded_image = self._encode_image(vae, image)
         encoded_image_dict = {"samples": encoded_image.cpu()}
-        encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, torch.from_numpy(np.transpose(np.ones_like(mask), (2, 0, 1))))[0]
-        c = final_img[:, :, :, 0:3]
-        m = final_img[:, :, :, 3:4]
-        m = (m > 0.5).float()
-        image = c * (1 - m) - m
-        return (image, encoded_image_dict)
+        mask = torch.ones_like(image[:, :, :, 0:1])
+        encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask[:, :, :, 0])[0]
 
-    RETURN_TYPES = ("IMAGE", "LATENT")
-    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent")
+        return (image[:, :, :, 0:3], encoded_image_dict, image)  # image= 1,h,w,c  0.0~1.0
+
+    RETURN_TYPES = ("IMAGE", "LATENT", "IMAGE")
+    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", "test_image")
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"
