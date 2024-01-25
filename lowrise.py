@@ -118,7 +118,10 @@ class abyz22_drawmask:
             if mask.shape[0] == 1:
                 pass
             elif mask.shape[1] >= 2:
-                mask = random.choice((mask[0], mask[1]))
+                if mask[0].sum() > mask[1].sum():
+                    mask=mask[0]
+                else:
+                    mask=mask[1]
 
         mask = np.array(mask)
         mask = torch.tensor(mask).unsqueeze(0)
