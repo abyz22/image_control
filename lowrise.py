@@ -67,6 +67,7 @@ class abyz22_drawmask:
                     [
                         "Waist-detect",
                         "pussy-detect",
+                        "tits-detect",
                     ],
                 ),
             },
@@ -92,6 +93,7 @@ class abyz22_drawmask:
         dx = int(w * kwargs["dx"])
         dy = int(h * kwargs["dy"])
         dy2 = y2 - int(h * kwargs["dy2"])
+
         if kwargs["mode_type"] == "Waist-detect":
             mask = mask.numpy()[0]
             mask[: int((y1 + y2) // 2)] = 0
@@ -101,17 +103,22 @@ class abyz22_drawmask:
             cv2.rectangle(mask, (x1, int(y2 * 0.95)), (x2, dy2), 1, -1)
         elif kwargs["mode_type"] == "pussy-detect":
             mask = mask.numpy()[0]
-
             person_mask = obj.doit(kwargs["person_SEGS"])[0]
 
             person_mask = person_mask.numpy()[0]
             person_mask[: int(y1 - kwargs["dy2"] * h), :] = 0  # 윗부분 자르기
             person_mask[int(y1 - kwargs["dy3"] * h) :, :] = 0  # 아랫부분 자르기
 
-            cv2.ellipse(person_mask, (int((x1 + x2) // 2), int(y1 - kwargs["dy3"] * h)), (int(dx), int(dy)), 0, 0, 180, 1, -1) #아랫부분 끝부터
+            cv2.ellipse(person_mask, (int((x1 + x2) // 2), int(y1 - kwargs["dy3"] * h)), (int(dx), int(dy)), 0, 0, 180, 1, -1)  # 아랫부분 끝부터
 
             # cv2.rectangle(person_mask, (int(x1 - 3 * w), int(y1 - 2 * h)), (int(x2 + 3 * w), int(y2)), 1, -1)
             mask = person_mask
+        elif kwargs["mode_type"] == "tits-detect":
+            # pick only 1 mask
+            if mask.shape[0] == 1:
+                pass
+            elif mask.shape[1] >= 2:
+                mask = random.choice((mask[0], mask[1]))
 
         mask = np.array(mask)
         mask = torch.tensor(mask).unsqueeze(0)
