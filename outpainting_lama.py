@@ -376,7 +376,6 @@ class abyz22_lamaPreprocessor:
 
             copy_img = pixels.clone()[i, :, :, :]
             final_img_with_alpha = copy_img*255.0
-            print(Up,Down,Left,Right)
             if Up + Down > 0:
                 image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2], pixels.shape[3]))
                 image[Up : Up + pixels.shape[1], :, :] = copy_img
