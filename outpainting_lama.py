@@ -455,11 +455,11 @@ class abyz22_lamaPreprocessor:
 
         pixels = pixels.permute(0, 3, 1, 2)
         img = torch.nn.functional.pad(pixels, (Left, Right, Up, Down), "constant", -1).permute(0, 2, 3, 1).to("cuda" if torch.cuda.is_available() else "cpu")
-        return (img, encoded_image_dict, image[:,:,:,:3])  # image= 1,h,w,c  0.0~1.0
+        return (img, encoded_image_dict)  # image= 1,h,w,c  0.0~1.0
 
 
     # masks.to("cuda" if torch.cuda.is_available() else "cpu")
-    RETURN_TYPES = ("IMAGE", "LATENT", "IMAGE")
-    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", "TEST")
+    RETURN_TYPES = ("IMAGE", "LATENT", )
+    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", )
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"
