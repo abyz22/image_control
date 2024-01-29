@@ -354,15 +354,15 @@ class abyz22_lamaPreprocessor:
         return vae_output
 
     def preprocess(
-        self, pixels: torch.Tensor, vae,  Width,Height,Width_Ratio_min,Width_Ratio_max,Height_Ratio_min,Height_Ratio_max, seed=0
+        self, pixels: torch.Tensor, vae, Width, Height, Width_Ratio_min, Width_Ratio_max, Height_Ratio_min, Height_Ratio_max, seed=0
     ):  # pixel= 1,768,512,3
         # 모드 설정
-        print('☆★ '*20)
+        # print("☆★ " * 20)
         np.random.seed(seed)
         random.seed(seed)
 
         model_lama = LamaInpainting()
-        imgs, masks = None, None
+        image,imgs, masks = None, None,None
         if Width_Ratio_min > Width_Ratio_max:
             Width_Ratio_min, Width_Ratio_max = Width_Ratio_max, Width_Ratio_min
         if Height_Ratio_min > Height_Ratio_max:
@@ -372,12 +372,13 @@ class abyz22_lamaPreprocessor:
             ratio_h = round(np.random.uniform(Height_Ratio_min, Height_Ratio_max), 2)
             ratio_w = round(np.random.uniform(Width_Ratio_min, Width_Ratio_max), 2)
             Up, Left = int(round(Height * ratio_h)), int(round(Width * ratio_w))
-            Down, Right = int(Height  - Up), int(Height - Left)
+            Down, Right = int(Height - Up), int(Width - Left)
 
             copy_img = pixels.clone()[i, :, :, :]
+            final_img_with_alpha = copy_img*255.0
+            print(Up,Down,Left,Right)
             if Up + Down > 0:
                 image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2], pixels.shape[3]))
-                up_start= np.random.uniform()
                 image[Up : Up + pixels.shape[1], :, :] = copy_img
 
                 # 마스크 제작하기
@@ -386,14 +387,15 @@ class abyz22_lamaPreprocessor:
 
                 # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
                 image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
-                image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
+                # image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
+                image_lama = image_with_alpha
 
                 # lama에 이미지+마스크 넣기
                 prd_color = model_lama(image_lama)
                 # print("Up+Down :", image_lama.shape, prd_color.shape)
                 # 이미지 크기 원상복구
-                prd_color = remove_pad(prd_color)
-                prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
+                # prd_color = remove_pad(prd_color)
+                # prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
 
                 raw_mask = image_with_alpha[:, :, 3:4]
                 mask_alpha = raw_mask > 0
@@ -415,7 +417,7 @@ class abyz22_lamaPreprocessor:
                 image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
                 # image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
                 # image_lama= cv2.resize(image_with_alpha,(256,256))
-                image_lama=image_with_alpha
+                image_lama = image_with_alpha
                 # lama에 이미지+마스크 넣기
 
                 prd_color = model_lama(image_lama)
@@ -454,12 +456,21 @@ class abyz22_lamaPreprocessor:
         encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask_with_1)[0]
 
         pixels = pixels.permute(0, 3, 1, 2)
-        img = torch.nn.functional.pad(pixels, (Left, Right, Up, Down), "constant", -1).permute(0, 2, 3, 1).to("cuda" if torch.cuda.is_available() else "cpu")
+        img = (
+            torch.nn.functional.pad(pixels, (Left, Right, Up, Down), "constant", -1)
+            .permute(0, 2, 3, 1)
+            .to("cuda" if torch.cuda.is_available() else "cpu")
+        )
         return (img, encoded_image_dict)  # image= 1,h,w,c  0.0~1.0
 
-
     # masks.to("cuda" if torch.cuda.is_available() else "cpu")
-    RETURN_TYPES = ("IMAGE", "LATENT", )
-    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", )
+    RETURN_TYPES = (
+        "IMAGE",
+        "LATENT",
+    )
+    RETURN_NAMES = (
+        "LaMa Preprocessed Image",
+        "LaMa Preprocessed Latent",
+    )
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"
