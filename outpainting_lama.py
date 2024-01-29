@@ -328,18 +328,12 @@ class abyz22_lamaPreprocessor:
             "required": {
                 "pixels": ("IMAGE",),
                 "vae": ("VAE",),
-                "mode_type": (
-                    [
-                        "add_manually",
-                        "Random",
-                    ],
-                ),
-                "Left": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
-                "Right": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
-                "Up": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
-                "Down": ("INT", {"default": 0, "min": 0, "max": 4096, "step": 8}),
-                "Ratio_min": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.5, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
-                "Ratio_max": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.5, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "Width": ("INT", {"default": 0, "min": 0, "max": 2048, "step": 8}),
+                "Width_Ratio_min": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "Width_Ratio_max": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "Height": ("INT", {"default": 0, "min": 0, "max": 2048, "step": 8}),
+                "Height_Ratio_min": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "Height_Ratio_max": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
         }
@@ -360,30 +354,30 @@ class abyz22_lamaPreprocessor:
         return vae_output
 
     def preprocess(
-        self, pixels: torch.Tensor, vae, mode_type, Left=0, Right=0, Up=0, Down=0, Ratio_min=0.0, Ratio_max=0.0, seed=0
+        self, pixels: torch.Tensor, vae,  Width,Height,Width_Ratio_min,Width_Ratio_max,Height_Ratio_min,Height_Ratio_max, seed=0
     ):  # pixel= 1,768,512,3
         # 모드 설정
+        print('☆★ '*20)
         np.random.seed(seed)
         random.seed(seed)
-        if Ratio_min > Ratio_max:
-            Ratio_min, Ratio_max = Ratio_max, Ratio_min
-        Ratio = round(np.random.uniform(Ratio_min, Ratio_max),2)
 
-        print(" ☆★" * 20)
         model_lama = LamaInpainting()
-        imgs,masks = None,None
+        imgs, masks = None, None
+        if Width_Ratio_min > Width_Ratio_max:
+            Width_Ratio_min, Width_Ratio_max = Width_Ratio_max, Width_Ratio_min
+        if Height_Ratio_min > Height_Ratio_max:
+            Height_Ratio_min, Height_Ratio_max = Height_Ratio_max, Height_Ratio_min
 
         for i in range(pixels.shape[0]):
-            if mode_type == "Random":
-                ratio_h = round(np.random.uniform(0, Ratio),2)
-                ratio_w = round(np.random.uniform(0, Ratio),2)
-                print('ratio : ', ratio_h,ratio_w)
-                Up, Left = int(round(pixels.shape[1] * ratio_h)), int(round(pixels.shape[2] * ratio_w))
-                Down, Right = int(round(pixels.shape[1]*Ratio - Up)), int(round(pixels.shape[2]*Ratio - Left))
+            ratio_h = round(np.random.uniform(Height_Ratio_min, Height_Ratio_max), 2)
+            ratio_w = round(np.random.uniform(Width_Ratio_min, Width_Ratio_max), 2)
+            Up, Left = int(round(Height * ratio_h)), int(round(Width * ratio_w))
+            Down, Right = int(Height  - Up), int(Height - Left)
 
             copy_img = pixels.clone()[i, :, :, :]
             if Up + Down > 0:
                 image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2], pixels.shape[3]))
+                up_start= np.random.uniform()
                 image[Up : Up + pixels.shape[1], :, :] = copy_img
 
                 # 마스크 제작하기
@@ -419,15 +413,17 @@ class abyz22_lamaPreprocessor:
 
                 # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
                 image_with_alpha = (torch.cat([image, mask], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
-                image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
-
+                # image_lama, remove_pad = resize_image_with_pad(image_with_alpha, 256, skip_hwc3=True)
+                # image_lama= cv2.resize(image_with_alpha,(256,256))
+                image_lama=image_with_alpha
                 # lama에 이미지+마스크 넣기
+
                 prd_color = model_lama(image_lama)
                 # print("Left+Right", image_lama.shape, prd_color.shape)
 
                 # 이미지 크기 원상복구
-                prd_color = remove_pad(prd_color)
-                prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
+                # prd_color = remove_pad(prd_color)
+                # prd_color = cv2.resize(prd_color, (image.shape[1], image.shape[0]))
 
                 raw_mask = image_with_alpha[:, :, 3:4]
                 mask_alpha = raw_mask > 0
@@ -441,14 +437,13 @@ class abyz22_lamaPreprocessor:
 
             mask = torch.ones_like(image[:, :, 0:1])
             mask[Up : Up + pixels.shape[1], Left : Left + pixels.shape[2], :] = 0
-            mask=mask.permute(2,0,1).unsqueeze(0)
+            mask = mask.permute(2, 0, 1).unsqueeze(0)
             if i == 0:
                 imgs = final_img_with_alpha
-                masks=mask
+                masks = mask
             else:
                 imgs = np.concatenate([imgs, final_img_with_alpha])
-                masks=torch.cat([masks,mask])
-
+                masks = torch.cat([masks, mask])
 
         image = (torch.from_numpy(imgs).float() / 255.0).clone().to("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -458,9 +453,13 @@ class abyz22_lamaPreprocessor:
         mask_with_1 = torch.ones_like(image[:, :, :, 0])
         encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask_with_1)[0]
 
-        return (image[:, :, :, 0:3], encoded_image_dict, masks.to("cuda" if torch.cuda.is_available() else "cpu"))  # image= 1,h,w,c  0.0~1.0
+        pixels = pixels.permute(0, 3, 1, 2)
+        img = torch.nn.functional.pad(pixels, (Left, Right, Up, Down), "constant", -1).permute(0, 2, 3, 1).to("cuda" if torch.cuda.is_available() else "cpu")
+        return (img, encoded_image_dict, image[:,:,:,:3])  # image= 1,h,w,c  0.0~1.0
 
-    RETURN_TYPES = ("IMAGE", "LATENT", "MASK")
-    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", "mask")
+
+    # masks.to("cuda" if torch.cuda.is_available() else "cpu")
+    RETURN_TYPES = ("IMAGE", "LATENT", "IMAGE")
+    RETURN_NAMES = ("LaMa Preprocessed Image", "LaMa Preprocessed Latent", "TEST")
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"

@@ -65,7 +65,9 @@ class LamaInpainting:
             image_feed = torch.cat([color, mask], dim=2)
 
             image_feed = rearrange(image_feed, 'h w c -> 1 c h w')
+            print('before : ',image_feed.shape)
             result = self.model(image_feed)[0]
+            print('after  : ', result.shape)
             result = rearrange(result, 'c h w -> h w c')
             result = result * mask + color * (1 - mask)
             result *= 255.0
