@@ -155,7 +155,7 @@ class abyz22_SetQueue:
                 if (kwargs["Num_of_Prompts"] == 1) and (kwargs["prompt"] != ""):  # 폴더1개만이고 프롬프트 있으면,
                     self.prompt = kwargs["prompt"]
                 else:
-                    self.prompt = prompts_maker.make_prompt(mode=kwargs["mode_type"], etc=self.cur_prompts)
+                    self.prompt = prompts_maker.make_prompt(mode=kwargs["mode_type"], etc=self.highest_num+1+self.cur_prompts)
 
                 epath = "E:/stable-diffusion-webui/outputs/history.xlsx"
                 T_workbook = load_workbook(epath, data_only=True)

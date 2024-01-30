@@ -10,6 +10,95 @@ from scipy.ndimage import zoom
 import comfy
 
 
+class abyz22_Topipe:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "MODEL": ("MODEL",),
+                "CLIP": ("CLIP",),
+                "VAE": ("VAE",),
+                "Positive": ("CONDITIONING",),
+                "Negative": ("CONDITIONING",),
+                "IMAGE": ("IMAGE",),
+                "latent_Image": ("LATENT",),
+            },
+            "optional": {
+                "latent": ("LATENT",),
+            },
+        }
+
+    RETURN_TYPES = ("PIPE",)
+    RETURN_NAMES = ("pipe",)
+
+    FUNCTION = "run"
+
+    CATEGORY = "abyz22"
+
+    def run(sefl, *args, **kwargs):
+        pipe={}
+        pipe['MODEL']=kwargs.get('MODEL')
+        pipe['CLIP']=kwargs.get('CLIP')
+        pipe['VAE']=kwargs.get('VAE')
+        pipe['POSITIVE']=kwargs.get('Positive')
+        pipe['NEGATIVE']=kwargs.get('Negative')
+        pipe['IMAGE']=kwargs.get('IMAGE')
+        pipe['latent_image']=kwargs.get('latent_Image')
+        pipe['latent']=kwargs.get('latent')
+        return (pipe,)
+
+
+class abyz22_Frompipe:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {"pipe": ("PIPE",)},
+        }
+
+    RETURN_TYPES = (
+        "MODEL",
+        "CLIP",
+        "VAE",
+        "CONDITIONING",
+        "CONDITIONING",
+        "IMAGE",
+        "LATENT",
+        "LATENT",
+    )
+    RETURN_NAMES = (
+        "MODEL",
+        "CLIP",
+        "VAE",
+        "Positive",
+        "Negative",
+        "IMAGE",
+        "latent Image",
+        "latent",
+    )
+
+    FUNCTION = "run"
+
+    CATEGORY = "abyz22"
+
+    def run(sefl, *args, **kwargs):
+        pipe = kwargs["pipe"]
+        model = pipe.get("MODEL")
+        clip = pipe.get("CLIP")
+        vae = pipe.get("VAE")
+        positive = pipe.get("POSITIVE")
+        negative = pipe.get("NEGATIVE")
+        image = pipe.get("IMAGE")
+        latent_image = pipe.get("latent_image")
+        latent = pipe.get("latent")
+        return (model, clip, vae, positive, negative, image, latent_image, latent,)
+
+
 def tensor_convert_rgba(image, prefer_copy=True):
     """Assumes NHWC format tensor with 1, 3 or 4 channels."""
     _tensor_check_image(image)

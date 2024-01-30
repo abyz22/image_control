@@ -119,9 +119,9 @@ class abyz22_drawmask:
                 pass
             elif mask.shape[1] >= 2:
                 if mask[0].sum() > mask[1].sum():
-                    mask=mask[0]
+                    mask = mask[0]
                 else:
-                    mask=mask[1]
+                    mask = mask[1]
 
         mask = np.array(mask)
         mask = torch.tensor(mask).unsqueeze(0)
@@ -208,3 +208,43 @@ class abyz22_blend_onecolor:
             else:
                 images = torch.cat([images, image])
         return (images,)
+
+
+class abyz22_makecircles:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image(mask)": ("IMAGE",),
+                "amount": ("INT", {"default": 100, "min": 0, "max": 200, "step": 1, "dispaly": "slider"}),
+                "r_x": ("INT", {"default": 10, "min": 0, "max": 30, "step": 1, "dispaly": "slider"}),
+                "r_y": ("INT", {"default": 10, "min": 0, "max": 30, "step": 1, "dispaly": "slider"}),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
+
+    FUNCTION = "run"
+
+    CATEGORY = "abyz22"
+
+    def run(sefl, *args, **kwargs):
+        images, amount, r_x, r_y = kwargs["image(mask)"], kwargs["amount"], kwargs["r_x"], kwargs["r_y"]
+        mask = np.zeros_like(images[0])
+
+        a = np.random.uniform(0, mask.shape[1], amount)
+        b = np.random.uniform(0, mask.shape[0], amount)
+
+        for i,ii in zip(a,b):
+            cv2.ellipse(mask, (int(i), int(ii)), (r_x, r_y), 0, 0, 360, (255, 255, 255), -1)
+        mask=torch.from_numpy(mask)
+        output=[]
+        for i in range(images.shape[0]):
+            image = torch.bitwise_and(images[i].int(), mask.int()).unsqueeze(0)
+            if i == 0:
+                output = image
+            else:
+                output = torch.cat([output, image])
+        output=output.float()
+        return (output,)
