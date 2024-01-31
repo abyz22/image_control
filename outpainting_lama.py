@@ -358,9 +358,16 @@ class abyz22_lamaPreprocessor:
     ):  # pixel= 1,768,512,3
         # 모드 설정
         # print("☆★ " * 20)
+        
+        if Width==0 and Height==0:
+            encoded_image = self._encode_image(vae, pixels.to("cuda" if torch.cuda.is_available() else "cpu"))
+            encoded_image_dict = {"samples": encoded_image.cpu()}
+            mask_with_1 = torch.ones_like(pixels[:, :, :, 0])
+            encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask_with_1)[0]
+            return (pixels.to("cuda" if torch.cuda.is_available() else "cpu"),encoded_image_dict)
+        
         np.random.seed(seed)
         random.seed(seed)
-
         model_lama = LamaInpainting()
         image,imgs, masks = None, None,None
         if Width_Ratio_min > Width_Ratio_max:
