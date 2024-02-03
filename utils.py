@@ -177,7 +177,7 @@ class abyz22_Convertpipe:
         negative=pipe['NEGATIVE']
 
         basic_pipe=(model,clip,vae,positive,negative)
-        return (basic_pipe,kwargs['IMAGE'],)
+        return (basic_pipe,pipe['IMAGE'],)
 
 
 def tensor_convert_rgba(image, prefer_copy=True):
