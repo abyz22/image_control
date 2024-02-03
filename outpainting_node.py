@@ -79,7 +79,7 @@ class abyz22_Pad_Image:
         pose_image = obj.estimate_pose(
             image, "disable", "enable", "disable", resolution=resolution, bbox_detector="yolox_s.onnx", pose_estimator="dw-ss_ucoco.onnx"
         )["result"][0]
-        padded_image,padded_pose_image=None,None
+        padded_image, padded_pose_image = None, None
 
         # Resize_by = random.uniform(Ratio_min, Ratio_max)
         for i, Resize_by in enumerate(Resize_bys):
@@ -93,7 +93,7 @@ class abyz22_Pad_Image:
             # resized_image = 3,768,512
             dx, dy = abs(image.shape[2] - resized_image.shape[2]), abs(image.shape[1] - resized_image.shape[1])
             rdx, rdy = random.randint(0, dx), random.randint(0, dy)
-            if Resize_by < 1:
+            if Resize_by <= 1:
                 mode_list = {
                     "Top-Left": (0, dx, 0, dy),
                     "Top": (int(round(dx / 2)), int(round(dx / 2)) + 1, 0, dy),
@@ -162,7 +162,7 @@ class abyz22_Pad_Image:
                 final_image = padded_image
                 final_pose_image = padded_pose_image
             else:
-                final_image = torch.cat((final_image, padded_image))
+                final_image = torch.cat((final_image, padded_image))  # TODO 여기서 문제 발생? expected Tensor as element 0 in argument 0, but got NoneType
                 final_pose_image = torch.cat((final_pose_image, padded_pose_image))
 
         latent = nodes.VAEEncode().encode(vae, final_image)[0]

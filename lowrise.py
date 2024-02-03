@@ -21,7 +21,7 @@ from PIL import ImageDraw
 
 #     CATEGORY = "abyz22"
 
-#     def run(sefl,*args,**kwargs):
+#     def run(self,*args,**kwargs):
 #         return None
 
 

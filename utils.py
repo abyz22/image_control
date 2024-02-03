@@ -39,15 +39,15 @@ class abyz22_Topipe:
     CATEGORY = "abyz22"
 
     def run(sefl, *args, **kwargs):
-        pipe={}
-        pipe['MODEL']=kwargs.get('MODEL')
-        pipe['CLIP']=kwargs.get('CLIP')
-        pipe['VAE']=kwargs.get('VAE')
-        pipe['POSITIVE']=kwargs.get('Positive')
-        pipe['NEGATIVE']=kwargs.get('Negative')
-        pipe['IMAGE']=kwargs.get('IMAGE')
-        pipe['latent_image']=kwargs.get('latent_Image')
-        pipe['latent']=kwargs.get('latent')
+        pipe = {}
+        pipe["MODEL"] = kwargs.get("MODEL")
+        pipe["CLIP"] = kwargs.get("CLIP")
+        pipe["VAE"] = kwargs.get("VAE")
+        pipe["POSITIVE"] = kwargs.get("Positive")
+        pipe["NEGATIVE"] = kwargs.get("Negative")
+        pipe["IMAGE"] = kwargs.get("IMAGE")
+        pipe["latent_image"] = kwargs.get("latent_Image")
+        pipe["latent"] = kwargs.get("latent")
         return (pipe,)
 
 
@@ -62,6 +62,7 @@ class abyz22_Frompipe:
         }
 
     RETURN_TYPES = (
+        "PIPE",
         "MODEL",
         "CLIP",
         "VAE",
@@ -72,6 +73,7 @@ class abyz22_Frompipe:
         "LATENT",
     )
     RETURN_NAMES = (
+        "pipe",
         "MODEL",
         "CLIP",
         "VAE",
@@ -96,7 +98,86 @@ class abyz22_Frompipe:
         image = pipe.get("IMAGE")
         latent_image = pipe.get("latent_image")
         latent = pipe.get("latent")
-        return (model, clip, vae, positive, negative, image, latent_image, latent,)
+        return (pipe, model, clip, vae, positive, negative, image, latent_image, latent)
+
+
+class abyz22_Editpipe:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "pipe": ("PIPE",),
+            },
+            "optional": {
+                "MODEL": ("MODEL",),
+                "CLIP": ("CLIP",),
+                "VAE": ("VAE",),
+                "Positive": ("CONDITIONING",),
+                "Negative": ("CONDITIONING",),
+                "IMAGE": ("IMAGE",),
+                "latent_Image": ("LATENT",),
+                "latent": ("LATENT",),
+            },
+        }
+
+    RETURN_TYPES = ("PIPE",)
+    RETURN_NAMES = ("pipe",)
+
+    FUNCTION = "run"
+
+    CATEGORY = "abyz22"
+
+    def run(sefl, *args, **kwargs):
+        pipe = kwargs["pipe"]
+        if kwargs.get("MODEL") is not None:
+            pipe["MODEL"] = kwargs["MODEL"]
+        if kwargs.get("CLIP") is not None:
+            pipe["CLIP"] = kwargs["CLIP"]
+        if kwargs.get("VAE") is not None:
+            pipe["VAE"] = kwargs["VAE"]
+        if kwargs.get("Positive") is not None:
+            pipe["POSITIVE"] = kwargs["Positive"]
+        if kwargs.get("Negative") is not None:
+            pipe["NEGATIVE"] = kwargs["Negative"]
+        if kwargs.get("IMAGE") is not None:
+            pipe["IMAGE"] = kwargs["IMAGE"]
+        if kwargs.get("latent_Image") is not None:
+            pipe["latent_image"] = kwargs["latent_Image"]
+
+        return (pipe,)
+
+class abyz22_Convertpipe:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "pipe": ("PIPE",),
+            },
+        }
+
+    RETURN_TYPES = ("BASIC_PIPE",)
+    RETURN_NAMES = ("basic_pipe",)
+
+    FUNCTION = "run"
+
+    CATEGORY = "abyz22"
+
+    def run(sefl, *args, **kwargs):
+        pipe = kwargs["pipe"]
+        model=pipe['MODEL']
+        clip=pipe['CLIP']
+        vae=pipe['VAE']
+        positive=pipe['POSITIVE']
+        negative=pipe['NEGATIVE']
+
+        basic_pipe=(model,clip,vae,positive,negative)
+        return (basic_pipe,)
 
 
 def tensor_convert_rgba(image, prefer_copy=True):

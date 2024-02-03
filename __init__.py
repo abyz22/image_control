@@ -25,9 +25,12 @@ NODE_CLASS_MAPPINGS = {
     "abyz22_bypass":abyz22_bypass,
     "abyz22_smallhead":abyz22_smallhead,
     "abyz22_lamaPreprocessor":abyz22_lamaPreprocessor,
+    "abyz22_lamaInpaint":abyz22_lamaInpaint,
     "abyz22_makecircles":abyz22_makecircles,
     "abyz22_Topipe":abyz22_Topipe,
     "abyz22_Frompipe":abyz22_Frompipe,
+    "abyz22_Editpipe":abyz22_Editpipe,
+    "abyz22_Convertpipe":abyz22_Convertpipe,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
@@ -48,7 +51,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "abyz22_bypass":"abyz22_bypass",
     "abyz22_smallhead":"abyz22_smallhead",
     "abyz22_lamaPreprocessor":"abyz22_lamaPreprocessor",
+    "abyz22_lamaInpaint":"abyz22_lamaInpaint",
     "abyz22_makecircles":"abyz22_makecircles",
     "abyz22_Topipe":"abyz22_Topipe",
     "abyz22_Frompipe":"abyz22_Frompipe",
+    "abyz22_Editpipe":"abyz22_Editpipe",
+    "abyz22_Convertpipe":"abyz22_Convertpipe",
 }

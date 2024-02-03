@@ -14,6 +14,7 @@ from PIL import Image
 from numpy import dtype
 from scipy import ndimage
 from torch import device
+import nodes
 
 # Get the absolute path of various directories
 my_dir = os.path.dirname(os.path.abspath(__file__))
@@ -358,18 +359,18 @@ class abyz22_lamaPreprocessor:
     ):  # pixel= 1,768,512,3
         # 모드 설정
         # print("☆★ " * 20)
-        
-        if Width==0 and Height==0:
+
+        if Width == 0 and Height == 0:
             encoded_image = self._encode_image(vae, pixels.to("cuda" if torch.cuda.is_available() else "cpu"))
             encoded_image_dict = {"samples": encoded_image.cpu()}
             mask_with_1 = torch.ones_like(pixels[:, :, :, 0])
             encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask_with_1)[0]
-            return (pixels.to("cuda" if torch.cuda.is_available() else "cpu"),encoded_image_dict)
-        
+            return (pixels.to("cuda" if torch.cuda.is_available() else "cpu"), encoded_image_dict)
+
         np.random.seed(seed)
         random.seed(seed)
         model_lama = LamaInpainting()
-        image,imgs, masks = None, None,None
+        image, imgs, masks = None, None, None
         if Width_Ratio_min > Width_Ratio_max:
             Width_Ratio_min, Width_Ratio_max = Width_Ratio_max, Width_Ratio_min
         if Height_Ratio_min > Height_Ratio_max:
@@ -382,7 +383,7 @@ class abyz22_lamaPreprocessor:
             Down, Right = int(Height - Up), int(Width - Left)
 
             copy_img = pixels.clone()[i, :, :, :]
-            final_img_with_alpha = copy_img*255.0
+            final_img_with_alpha = copy_img * 255.0
             if Up + Down > 0:
                 image = torch.rand((pixels.shape[1] + Up + Down, pixels.shape[2], pixels.shape[3]))
                 image[Up : Up + pixels.shape[1], :, :] = copy_img
@@ -480,3 +481,88 @@ class abyz22_lamaPreprocessor:
     )
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"
+
+
+class abyz22_lamaInpaint:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "pixels": ("IMAGE",),  # N,H,W,C
+                "vae": ("VAE",),
+            },
+            "optional": {
+                "mask": ("MASK",),  #  N,H,W
+                "mask_(img)": ("IMAGE",),
+            },
+        }
+
+    RETURN_TYPES = (
+        "IMAGE",
+        "LATENT",
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "LaMa Preprocessed Image",
+        "LaMa Preprocessed Latent",
+        "LaMa Image",
+    )
+    FUNCTION = "preprocess"
+    CATEGORY = "abyz22"
+    FUNCTION = "run"
+
+    def _encode_image(self, vae, image):
+        # encoder = VAEEncode()
+        wrapper = VAEWrapper(vae)
+        image = image[:, :, :, 0:3]
+        image_without_alpha = image.to(wrapper.vae.vae_dtype) * 2.0 - 1.0
+        image = image_without_alpha.permute(0, 3, 1, 2)
+        # image = rearrange(image_without_alpha, "1 w h c -> 1 c w h")
+        encoded_image = wrapper.encode_first_stage_(image)
+        if torch.all(torch.isnan(encoded_image.mean())):
+            print("All values produced are NANs, automatically upcasting dtype to float32")
+            wrapper.to(torch.float32)
+            encoded_image = wrapper.encode_first_stage_(image)
+        vae_output = wrapper.get_first_stage_encoding_(encoded_image)
+        return vae_output
+
+    def run(self, *args, **kwargs):
+        pixels, vae = kwargs["pixels"], kwargs["vae"]
+        if kwargs.get("mask") is not None:
+            mask = kwargs.get("mask")
+        elif kwargs.get("mask_(img)") is not None:
+            # print(len(kwargs.get("mask_(img)")))
+            # print(kwargs.get("mask_(img)")[0].shape)
+            mask = kwargs.get("mask_(img)")[0][:, :, :, 0]
+        else:
+            mask = torch.zeros_like(pixels)[:, :, :, 0]
+        print("mask shape : ", mask.shape, mask.min(), mask.max())
+        # 이미지 크기/값 lama에 맞추기 (0.0~1.0 -> 0~255)
+        for i in range(pixels.shape[0]):
+            image_with_alpha = (torch.cat([pixels[i], mask[i].unsqueeze(-1)], -1).numpy() * 255).astype(np.uint8)  # 알파채널 합침
+
+            model_lama = LamaInpainting()
+            final_img = model_lama(image_with_alpha)
+            final_img = torch.from_numpy(final_img) / 255.0
+            print(final_img.shape)
+            final_img = torchvision.transforms.Resize((final_img.shape[0:2]))(final_img.permute(2, 0, 1)).permute(1, 2, 0)
+        final_img = final_img.unsqueeze(0)
+        lama_image=final_img.clone().to("cuda" if torch.cuda.is_available() else "cpu")
+        encoded_image = self._encode_image(vae, final_img.to("cuda" if torch.cuda.is_available() else "cpu"))
+        encoded_image_dict = {"samples": encoded_image.cpu()}
+        # mask = torch.ones_like(pixels[:, :, :, 0])
+        latent = SetLatentNoiseMask().set_mask(encoded_image_dict, mask)[0]
+
+        latent = nodes.VAEEncode().encode(vae, final_img)[0]
+        # latent = nodes.VAEEncodeForInpaint().encode(vae, final_img, mask, grow_mask_by=6)[0]
+
+        print('before concat : ',final_img.shape,mask.unsqueeze(-1).shape)
+        final_img = torch.cat([final_img, mask.unsqueeze(-1)], -1)
+        print(final_img.shape, final_img.min(), final_img.max())
+        c = final_img[:, :, :, 0:3]
+        m = final_img[:, :, :, 3:4]
+        m = (m > 0.5).float()
+        final_img = c * (1 - m) - m
+        print(final_img.shape, final_img.min(), final_img.max())
+
+        return (final_img.to("cuda" if torch.cuda.is_available() else "cpu"), latent,lama_image)
