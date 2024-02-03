@@ -1,3 +1,5 @@
+## inpaint with LaMa
+## Outpainting (LaMa)
 ## Resize Image (zoom in/out)
 ## Change Breast (Solved the problem of the pelvis becoming enlarged when printing huge breasts)
 ## Lowrise(lowlegs) pants
