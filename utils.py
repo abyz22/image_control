@@ -161,8 +161,8 @@ class abyz22_Convertpipe:
             },
         }
 
-    RETURN_TYPES = ("BASIC_PIPE",)
-    RETURN_NAMES = ("basic_pipe",)
+    RETURN_TYPES = ("BASIC_PIPE","IMAGE",)
+    RETURN_NAMES = ("basic_pipe",'image',)
 
     FUNCTION = "run"
 
@@ -177,7 +177,7 @@ class abyz22_Convertpipe:
         negative=pipe['NEGATIVE']
 
         basic_pipe=(model,clip,vae,positive,negative)
-        return (basic_pipe,)
+        return (basic_pipe,kwargs['IMAGE'],)
 
 
 def tensor_convert_rgba(image, prefer_copy=True):
