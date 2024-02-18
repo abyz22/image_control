@@ -19,7 +19,7 @@ import nodes, folder_paths  # 기본노드, 파일로드
 
 #     CATEGORY = "abyz22"
 
-#     def run(sefl,*args,**kwargs):
+#     def run(self,*args,**kwargs):
 #         return None
 
 

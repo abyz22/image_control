@@ -16,6 +16,27 @@ from scipy import ndimage
 from torch import device
 import nodes
 
+# class name:
+#     def __init__(self):
+#         pass
+
+#     @classmethod
+#     def INPUT_TYPES(s):
+#         return {
+#         "required": {},
+#         "optional": {},
+#         }
+#     RETURN_TYPES = ()
+#     RETURN_NAMES = ()
+
+#     FUNCTION = "run"
+
+#     CATEGORY = "abyz22"
+
+#     def run(self,*args,**kwargs):
+#         return None
+
+
 # Get the absolute path of various directories
 my_dir = os.path.dirname(os.path.abspath(__file__))
 custom_nodes_dir = os.path.abspath(os.path.join(my_dir, ".."))
@@ -365,7 +386,7 @@ class abyz22_lamaPreprocessor:
             encoded_image_dict = {"samples": encoded_image.cpu()}
             mask_with_1 = torch.ones_like(pixels[:, :, :, 0])
             encoded_image_dict = SetLatentNoiseMask().set_mask(encoded_image_dict, mask_with_1)[0]
-            return (pixels.to("cuda" if torch.cuda.is_available() else "cpu"), encoded_image_dict)
+            return (pixels.to("cuda" if torch.cuda.is_available() else "cpu"), encoded_image_dict,pixels.to("cuda" if torch.cuda.is_available() else "cpu"))
 
         np.random.seed(seed)
         random.seed(seed)
@@ -468,16 +489,18 @@ class abyz22_lamaPreprocessor:
             .permute(0, 2, 3, 1)
             .to("cuda" if torch.cuda.is_available() else "cpu")
         )
-        return (img, encoded_image_dict)  # image= 1,h,w,c  0.0~1.0
+        return (img, encoded_image_dict,image[:,:,:,0:3].to("cuda" if torch.cuda.is_available() else "cpu"))  # image= 1,h,w,c  0.0~1.0
 
     # masks.to("cuda" if torch.cuda.is_available() else "cpu")
     RETURN_TYPES = (
         "IMAGE",
         "LATENT",
+        "IMAGE",
     )
     RETURN_NAMES = (
         "LaMa Preprocessed Image",
         "LaMa Preprocessed Latent",
+        "LaMa Image"
     )
     FUNCTION = "preprocess"
     CATEGORY = "abyz22"
@@ -566,3 +589,31 @@ class abyz22_lamaInpaint:
         print(final_img.shape, final_img.min(), final_img.max())
 
         return (final_img.to("cuda" if torch.cuda.is_available() else "cpu"), latent,lama_image)
+
+class abyz22_RemoveControlnet:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "Conditioning": ("CONDITIONING",),  
+                "ControlNet": ("CONDITIONING",),
+            },
+        }
+
+    RETURN_TYPES = ("CONDITIONING",)
+    RETURN_NAMES = ('Conditioning',)
+
+    FUNCTION = "run"
+
+    CATEGORY = "abyz22"
+
+    def run(self,*args,**kwargs):
+        print(kwargs['Conditioning'][0][1])
+        print(len(kwargs['Conditioning'][0][1]))
+        print('☆★ '*20)
+        print(kwargs['ControlNet'][0][1])
+        print(len(kwargs['ControlNet'][0][1]))
+        return None

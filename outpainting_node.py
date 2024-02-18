@@ -2,8 +2,27 @@ import math, cv2, random, torch, torchvision
 import numpy as np
 import nodes, folder_paths  # 기본노드, 파일로드
 
-# padding1 conditioning
-# padding2 conditioning's'  (와카 여러개 된것 (프롬프트 여러개))
+
+# class name:
+#     def __init__(self):
+#         pass
+
+#     @classmethod
+#     def INPUT_TYPES(s):
+#         return {
+#         "required": {},
+#         "optional": {},
+#         }
+#     RETURN_TYPES = ()
+#     RETURN_NAMES = ()
+
+#     FUNCTION = "run"
+
+#     CATEGORY = "abyz22"
+
+#     def run(self,*args,**kwargs):
+#         return None
+
 
 
 def normalize_size_base_64(w, h):
@@ -168,6 +187,17 @@ class abyz22_Pad_Image:
         latent = nodes.VAEEncode().encode(vae, final_image)[0]
         ctrl_net_load = nodes.ControlNetLoader().load_controlnet(control_net_name)[0]
         conditioning1 = nodes.ControlNetApply().apply_controlnet(conditioning, ctrl_net_load, final_pose_image, pose_strength)[0]
+        # print(len(conditioning))
+        # print(len(conditioning[0]))
+        # print(len(conditioning[0][0]))
+        # print(len(conditioning[0][1]))
+        # print(conditioning[0][1])
+        # print(' ☆★'*20)
+        # print(len(conditioning1))
+        # print(len(conditioning1[0]))
+        # print(len(conditioning1[0][0]))
+        # print(len(conditioning1[0][1]))
+        # print(conditioning1[0][1])
         return (
             final_image,
             final_pose_image,

@@ -31,6 +31,7 @@ NODE_CLASS_MAPPINGS = {
     "abyz22_Frompipe":abyz22_Frompipe,
     "abyz22_Editpipe":abyz22_Editpipe,
     "abyz22_Convertpipe":abyz22_Convertpipe,
+    "abyz22_RemoveControlnet":abyz22_RemoveControlnet,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
@@ -57,4 +58,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "abyz22_Frompipe":"abyz22_Frompipe",
     "abyz22_Editpipe":"abyz22_Editpipe",
     "abyz22_Convertpipe":"abyz22_Convertpipe",
+    "abyz22_RemoveControlnet":"abyz22_RemoveControlnet",
 }
