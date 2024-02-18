@@ -1,1 +1,3 @@
 openpyxl
+pytorch-lightning
+kornia
