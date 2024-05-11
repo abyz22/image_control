@@ -24,7 +24,6 @@ import nodes, folder_paths  # 기본노드, 파일로드
 #         return None
 
 
-
 def normalize_size_base_64(w, h):
     short_side = min(w, h)
     remainder = short_side % 64
@@ -43,7 +42,10 @@ class abyz22_Pad_Image:
                 "conditioning": ("CONDITIONING",),
                 "vae": ("VAE",),
                 "control_net_name": (folder_paths.get_filename_list("controlnet"),),
-                "pose_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01, "round": 0.001, "dispaly": "slider"}),
+                "pose_strength": (
+                    "FLOAT",
+                    {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01, "round": 0.001, "dispaly": "slider"},
+                ),
                 "pad_mode": (["constant", "replicate", "noise"],),
                 "mode_type": (
                     [
@@ -82,7 +84,9 @@ class abyz22_Pad_Image:
 
     CATEGORY = "abyz22"
 
-    def run(self, image, vae, conditioning, control_net_name, pose_strength, mode_type, Ratio_min, Ratio_max, pad_mode, seed):  # image= 1,768,512,3
+    def run(
+        self, image, vae, conditioning, control_net_name, pose_strength, mode_type, Ratio_min, Ratio_max, pad_mode, seed
+    ):  # image= 1,768,512,3
         np.random.seed(seed)
         random.seed(seed)
         if Ratio_min > Ratio_max:
@@ -95,8 +99,15 @@ class abyz22_Pad_Image:
 
         obj = nodes.NODE_CLASS_MAPPINGS["DWPreprocessor"]()
         resolution = normalize_size_base_64(image.shape[2], image.shape[1])
+        # hand, body, face
         pose_image = obj.estimate_pose(
-            image, "disable", "enable", "disable", resolution=resolution, bbox_detector="yolox_s.onnx", pose_estimator="dw-ss_ucoco.onnx"
+            image,
+            "enable",
+            "enable",
+            "disable",
+            resolution=resolution,
+            bbox_detector="yolox_s.onnx",
+            pose_estimator="dw-ss_ucoco.onnx",
         )["result"][0]
         padded_image, padded_pose_image = None, None
 
@@ -104,7 +115,9 @@ class abyz22_Pad_Image:
         for i, Resize_by in enumerate(Resize_bys):
             x, y = int(image.shape[2] * Resize_by), int(image.shape[1] * Resize_by)
             resized_image = torchvision.transforms.Resize((y, x))(image[i].permute(2, 0, 1))  # 768,512,3 -> 3,768,512
-            resized_pose_image = torchvision.transforms.Resize((y, x), interpolation=torchvision.transforms.InterpolationMode.NEAREST)(
+            resized_pose_image = torchvision.transforms.Resize(
+                (y, x), interpolation=torchvision.transforms.InterpolationMode.NEAREST
+            )(
                 pose_image[i].permute(2, 0, 1)
             )  # 1,3,768,512
 
@@ -142,9 +155,15 @@ class abyz22_Pad_Image:
                     ] = resized_pose_image
                     padded_pose_image = padded_pose_image.permute(1, 2, 0).unsqueeze(0)
                 else:
-                    padded_image = torch.nn.functional.pad(resized_image, (mode_list[mode_type]), mode=pad_mode).permute(1, 2, 0).unsqueeze(0)
+                    padded_image = (
+                        torch.nn.functional.pad(resized_image, (mode_list[mode_type]), mode=pad_mode)
+                        .permute(1, 2, 0)
+                        .unsqueeze(0)
+                    )
                     padded_pose_image = (
-                        torch.nn.functional.pad(resized_pose_image, (mode_list[mode_type]), mode=pad_mode).permute(1, 2, 0).unsqueeze(0)
+                        torch.nn.functional.pad(resized_pose_image, (mode_list[mode_type]), mode=pad_mode)
+                        .permute(1, 2, 0)
+                        .unsqueeze(0)
                     )
             elif Resize_by > 1:
                 o_h, o_w = image.shape[1], image.shape[2]
@@ -181,7 +200,9 @@ class abyz22_Pad_Image:
                 final_image = padded_image
                 final_pose_image = padded_pose_image
             else:
-                final_image = torch.cat((final_image, padded_image))  # TODO 여기서 문제 발생? expected Tensor as element 0 in argument 0, but got NoneType
+                final_image = torch.cat(
+                    (final_image, padded_image)
+                )  # TODO 여기서 문제 발생? expected Tensor as element 0 in argument 0, but got NoneType
                 final_pose_image = torch.cat((final_pose_image, padded_pose_image))
 
         latent = nodes.VAEEncode().encode(vae, final_image)[0]
