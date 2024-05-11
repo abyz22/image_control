@@ -192,7 +192,7 @@ class abyz22_AddPrompt:
                     {
                         "multiline": True,
                         "dynamicPrompts": True,
-                        "default": "red light/blue light/yellow light/sun light/pink light/blue light/green light/purple light/",
+                        "default": "red light/blue light/yellow light/sun light/pink light/blue light/green light/purple light/warm atmosphere/sunshine from window/sunshine, outdoor, warm atmosphere/shadow from window/sunset over sea/neon light, city,cyberpunk/light and shadow/sci-fi RGB glowing, cyberpunk/natural lighting/shadow from window/sunset over sea/sci-fi RGB glowing, studio lighting/",
                     },
                 ),
             },
