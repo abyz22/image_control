@@ -8,6 +8,7 @@ from .small_head import *
 from .outpainting_lama import *
 from .utils import *
 from .random_mask import *
+from .censoring import *
 
 NODE_CLASS_MAPPINGS = {
     "abyz22_Padding Image": abyz22_Pad_Image,
@@ -35,6 +36,7 @@ NODE_CLASS_MAPPINGS = {
     "abyz22_RemoveControlnet": abyz22_RemoveControlnet,
     "abyz22_RandomMask": abyz22_RandomMask,
     "abyz22_AddPrompt": abyz22_AddPrompt,
+    "abyz22_censoring": abyz22_censoring,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
@@ -64,4 +66,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "abyz22_RemoveControlnet": "abyz22_RemoveControlnet",
     "abyz22_RandomMask": "abyz22_RandomMask",
     "abyz22_AddPrompt": "abyz22_AddPrompt",
+    "abyz22_censoring": "abyz22_censoring",
 }
