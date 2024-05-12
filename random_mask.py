@@ -187,13 +187,13 @@ class abyz22_AddPrompt:
             "required": {
                 "conditioning": ("CONDITIONING",),
                 "clip": ("CLIP",),
-                "weight_factor": ("FLOAT", {"default": 1.25, "min": 0.5, "max": 1.5, "step": 0.05}),
+                "weight_factor": ("FLOAT", {"default": 1.2, "min": 0.5, "max": 1.5, "step": 0.05}),
                 "text": (
                     "STRING",
                     {
                         "multiline": True,
                         "dynamicPrompts": True,
-                        "default": "red light/blue light/yellow light/sun light/pink light/blue light/green light/purple light/warm atmosphere/sunshine from window/sunshine, outdoor, warm atmosphere/shadow from window/sunset over sea/neon light, city,cyberpunk/light and shadow/sci-fi RGB glowing, cyberpunk/natural lighting/shadow from window/sunset over sea/sci-fi RGB glowing, studio lighting/",
+                        "default": "red light/blue light/yellow light/sun light/pink light/blue light/green light/purple light/gray light/warm atmosphere/sunshine from window/sunshine, outdoor, warm atmosphere/shadow from window/sunset over sea/neon light, city,cyberpunk/light and shadow/natural lighting/sunset/black and white/",
                     },
                 ),
             },

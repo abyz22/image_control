@@ -42,6 +42,8 @@ class abyz22_censoring:
         if image.shape[1] != mask2.shape[1]:
             mask2 = mask2.permute(0, 2, 1)
         mask = mask1 + mask2
+        if mask.max() < 0.00001:
+            return (image,)
         mask_np = np.clip(255.0 * mask.cpu().numpy().squeeze(), 0, 255).astype(np.uint8)
         pil_image = Image.fromarray(mask_np, mode="L")
         # region_mask = self.WT.Masking.smooth_region(pil_image, sigma)
