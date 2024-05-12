@@ -199,8 +199,14 @@ class abyz22_AddPrompt:
             },
         }
 
-    RETURN_TYPES = ("CONDITIONING",)
-    RETURN_NAMES = ("conditioning",)
+    RETURN_TYPES = (
+        "CONDITIONING",
+        "STRING",
+    )
+    RETURN_NAMES = (
+        "conditioning",
+        "selected_prompt",
+    )
 
     FUNCTION = "run"
 
@@ -230,4 +236,7 @@ class abyz22_AddPrompt:
             tw = torch.cat((t1, cond_from), 1)
             n = [tw, c1[i][1].copy()]
             out.append(n)
-        return (out,)
+        return (
+            out,
+            text,
+        )
