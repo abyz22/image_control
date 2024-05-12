@@ -187,6 +187,7 @@ class abyz22_AddPrompt:
             "required": {
                 "conditioning": ("CONDITIONING",),
                 "clip": ("CLIP",),
+                "weight_factor": ("FLOAT", {"default": 1.3, "min": 0.5, "max": 1.5, "step": 0.05}),
                 "text": (
                     "STRING",
                     {
@@ -206,12 +207,13 @@ class abyz22_AddPrompt:
     CATEGORY = "abyz22"
 
     def run(self, *args, **kwargs):
-        c0, text, clip = kwargs["conditioning"], kwargs["text"], kwargs["clip"]
+        c0, text, clip, weight_factor = kwargs["conditioning"], kwargs["text"], kwargs["clip"], kwargs["weight_factor"]
         random.seed(time.time())
 
         if text.endswith("/"):
             text = text[:-1]
         text = random.choice(text.split("/"))
+        text = f"({text}:{weight_factor})"
 
         tokens = clip.tokenize(text)
         cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
