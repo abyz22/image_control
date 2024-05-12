@@ -187,7 +187,7 @@ class abyz22_AddPrompt:
             "required": {
                 "conditioning": ("CONDITIONING",),
                 "clip": ("CLIP",),
-                "weight_factor": ("FLOAT", {"default": 1.3, "min": 0.5, "max": 1.5, "step": 0.05}),
+                "weight_factor": ("FLOAT", {"default": 1.25, "min": 0.5, "max": 1.5, "step": 0.05}),
                 "text": (
                     "STRING",
                     {
