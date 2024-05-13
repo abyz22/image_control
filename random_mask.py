@@ -43,7 +43,7 @@ class abyz22_RandomMask:
                 ),
                 "mask_min": ("FLOAT", {"default": 0, "min": -0.1, "max": 1, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
                 "mask_max": ("FLOAT", {"default": 1, "min": 0, "max": 1.1, "step": 0.1, "round": 0.01, "dispaly": "slider"}),
-                "expand": ("INT", {"default": 0, "min": -200, "max": 200, "step": 1}),
+                "expand": ("INT", {"default": 50, "min": -200, "max": 200, "step": 1}),
                 "blur": (
                     ["very_weak", "weak", "medium", "hard", "very_hard", "random"],
                     {"default": "medium"},
@@ -70,7 +70,6 @@ class abyz22_RandomMask:
         image = kwargs["image"]
         torch.manual_seed(time.time())
         random.seed(time.time())
-        loc_x, loc_y = random.randint(0, image.shape[2]), random.randint(0, image.shape[1])
         shape, size, mask_min, mask_max, blur, expand = (
             kwargs["shape"],
             kwargs["size"],
@@ -91,6 +90,7 @@ class abyz22_RandomMask:
         batch_num = image.shape[0] if kwargs["multi_mask"] else 1
         masks = None
         for i in range(batch_num):
+            loc_x, loc_y = random.randint(0, image.shape[2]), random.randint(0, image.shape[1])
             mask = np.zeros((image.shape[1], image.shape[2]))
 
             w = random.randint(int(image.shape[2] * size_list[0]), int(image.shape[2] * size_list[1])) // 2
@@ -215,7 +215,8 @@ class abyz22_AddPrompt:
 
     def run(self, *args, **kwargs):
         c0, text, clip, weight_factor = kwargs["conditioning"], kwargs["text"], kwargs["clip"], kwargs["weight_factor"]
-        random.seed(time.time())
+        seed = time.time() if kwargs["seed"] == "no-data" else kwargs["seed"]
+        random.seed(seed)
 
         if text.endswith("/"):
             text = text[:-1]
