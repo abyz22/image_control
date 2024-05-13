@@ -193,9 +193,10 @@ class abyz22_AddPrompt:
                     {
                         "multiline": True,
                         "dynamicPrompts": True,
-                        "default": "red light/blue light/yellow light/sun light/pink light/blue light/green light/purple light/gray light/warm atmosphere/sunshine from window/sunshine, outdoor, warm atmosphere/shadow from window/sunset over sea/neon light, city,cyberpunk/light and shadow/natural lighting/sunset/black and white/",
+                        "default": "red light/blue light/yellow light/sun light/pink light/blue light/green light/purple light/gray light/warm atmosphere/sunshine from window/sunshine, outdoor, warm atmosphere/shadow from window/sunset over sea/neon light, cyberpunk/light and shadow/natural lighting/sunset/black and white/daylight/beige light/jade light/emerald light/lime light/aqua light/peach light/coral light/brown light/cream light/khaki light/olive light/frost light/navy light/cyan light/sunny day/",
                     },
                 ),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
         }
 

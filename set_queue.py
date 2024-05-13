@@ -6,7 +6,7 @@ from .utils import any_typ
 from server import PromptServer
 from . import utils
 
-if os.path.isfile("./custom_nodes/comfyUI_abyz22/prompts_maker.py"):
+if os.path.isfile("./custom_nodes/image_control/prompts_maker.py"):
     from . import prompts_maker
     from openpyxl import load_workbook
     from openpyxl.styles import Alignment
@@ -140,11 +140,11 @@ class abyz22_SetQueue:
         new_path = "no-data"
 
         if kwargs["Num_of_Prompts"] != 0:  # 폴더생성 1 이상이면
-            if self.highest_num == 0:
+            if self.highest_num == 0:  # 최고폴더 번호 기본값=0 으로 되있으면, 최고폴더 찾기
                 if kwargs["mode_type"] == "ab":
-                    self.base_folder_path = "E:/stable-diffusion-webui/outputs/1submit/"
+                    self.base_folder_path = "E:/ComfyUI/output/1submit/"
                 elif kwargs["mode_type"] == "d":
-                    self.base_folder_path = "E:/stable-diffusion-webui/outputs/3submit/"
+                    self.base_folder_path = "E:/ComfyUI/output/3submit/"
                 file_list = os.listdir(self.base_folder_path)
                 file_list = [f for f in file_list if len(f.split(".")) == 1]
                 file_list = [int(f.split(" ")[0]) for f in file_list]
@@ -155,9 +155,11 @@ class abyz22_SetQueue:
                 if (kwargs["Num_of_Prompts"] == 1) and (kwargs["prompt"] != ""):  # 폴더1개만이고 프롬프트 있으면,
                     self.prompt = kwargs["prompt"]
                 else:
-                    self.prompt = prompts_maker.make_prompt(mode=kwargs["mode_type"], etc=self.highest_num+1+self.cur_prompts, seed=kwargs["seed"])
+                    self.prompt = prompts_maker.make_prompt(
+                        mode=kwargs["mode_type"], etc=self.highest_num + 1 + self.cur_prompts, seed=kwargs["seed"]
+                    )
 
-                epath = "E:/stable-diffusion-webui/outputs/history.xlsx"
+                epath = "E:/ComfyUI/output/history.xlsx"
                 T_workbook = load_workbook(epath, data_only=True)
                 if kwargs["mode_type"] == "ab":
                     T_worksheet = T_workbook["Sheet1,2"]
@@ -282,7 +284,9 @@ class abyz22_bypass:
             if behavior:  # mute
                 should_be_mute_nodes = active_nodes + bypass_nodes
                 if len(should_be_mute_nodes) > 0:
-                    PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, "mutes": list(should_be_mute_nodes)})
+                    PromptServer.instance.send_sync(
+                        "impact-bridge-continue", {"node_id": unique_id, "mutes": list(should_be_mute_nodes)}
+                    )
                     error_skip_flag = True
                     raise Exception(
                         "IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it."
@@ -290,7 +294,9 @@ class abyz22_bypass:
             else:  # bypass
                 should_be_bypass_nodes = active_nodes + mute_nodes
                 if len(should_be_bypass_nodes) > 0:
-                    PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, "bypasses": list(should_be_bypass_nodes)})
+                    PromptServer.instance.send_sync(
+                        "impact-bridge-continue", {"node_id": unique_id, "bypasses": list(should_be_bypass_nodes)}
+                    )
                     error_skip_flag = True
                     raise Exception(
                         "IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it."
@@ -299,7 +305,9 @@ class abyz22_bypass:
             # active
             should_be_active_nodes = mute_nodes + bypass_nodes
             if len(should_be_active_nodes) > 0:
-                PromptServer.instance.send_sync("impact-bridge-continue", {"node_id": unique_id, "actives": list(should_be_active_nodes)})
+                PromptServer.instance.send_sync(
+                    "impact-bridge-continue", {"node_id": unique_id, "actives": list(should_be_active_nodes)}
+                )
                 error_skip_flag = True
                 raise Exception(
                     "IMPACT-PACK-SIGNAL: STOP CONTROL BRIDGE\nIf you see this message, your ComfyUI-Manager is outdated. Please update it."
