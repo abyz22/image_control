@@ -142,9 +142,9 @@ class abyz22_SetQueue:
         if kwargs["Num_of_Prompts"] != 0:  # 폴더생성 1 이상이면
             if self.highest_num == 0:  # 최고폴더 번호 기본값=0 으로 되있으면, 최고폴더 찾기
                 if kwargs["mode_type"] == "ab":
-                    self.base_folder_path = "E:/ComfyUI/output/1submit/"
+                    self.base_folder_path = "E:/ComfyUI/output/submit1/"
                 elif kwargs["mode_type"] == "d":
-                    self.base_folder_path = "E:/ComfyUI/output/3submit/"
+                    self.base_folder_path = "E:/ComfyUI/output/submit3/"
                 file_list = os.listdir(self.base_folder_path)
                 file_list = [f for f in file_list if len(f.split(".")) == 1]
                 file_list = [int(f.split(" ")[0]) for f in file_list]

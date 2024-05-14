@@ -3,6 +3,7 @@ import numpy as np
 import nodes, folder_paths  # 기본노드, 파일로드
 from PIL import Image, ImageDraw, ImageFilter
 from typing import Union, List
+from .utils import any_typ
 
 
 def pil2tensor(image: Union[Image.Image, List[Image.Image]]) -> torch.Tensor:
@@ -177,6 +178,7 @@ class abyz22_RandomMask:
         )
 
 
+
 class abyz22_AddPrompt:
     def __init__(self):
         pass
@@ -198,6 +200,9 @@ class abyz22_AddPrompt:
                 ),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
             },
+            "optional": {
+                "opt": (any_typ,),
+            },
         }
 
     RETURN_TYPES = (
@@ -215,13 +220,19 @@ class abyz22_AddPrompt:
 
     def run(self, *args, **kwargs):
         c0, text, clip, weight_factor = kwargs["conditioning"], kwargs["text"], kwargs["clip"], kwargs["weight_factor"]
-        seed = time.time() if kwargs["seed"] == "no-data" else kwargs["seed"]
+        if kwargs.get("opt"):
+            if kwargs["opt"] == "no-data":
+                seed = kwargs["seed"]
+            else:
+                seed = kwargs["opt"].rsplit("/", 1)[1]
+        else:
+            seed = kwargs["seed"]
         random.seed(seed)
 
         if text.endswith("/"):
             text = text[:-1]
         text = random.choice(text.split("/"))
-        text = f"({text}:{weight_factor})"
+        text = f"({text}:{round(weight_factor,2)})"
 
         tokens = clip.tokenize(text)
         cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
