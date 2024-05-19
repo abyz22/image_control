@@ -38,7 +38,7 @@ class abyz22_Pad_Image:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "image": ("IMAGE",),
+                "image": ("IMAGE",),  # image= N,768,512,3
                 "conditioning": ("CONDITIONING",),
                 "vae": ("VAE",),
                 "control_net_name": (folder_paths.get_filename_list("controlnet"),),
