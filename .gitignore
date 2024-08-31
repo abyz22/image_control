@@ -1,3 +1,6 @@
 __pycache__
 prompts_maker.py
+prompts_maker_backup.py
 annotator/lama/models/ControlNetLama.pth
+prompts_maker/
+save_image.py

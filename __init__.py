@@ -10,6 +10,7 @@ from .utils import *
 from .random_mask import *
 from .censoring import *
 from .openpose_resize import *
+from .path_generator import *
 
 NODE_CLASS_MAPPINGS = {
     "abyz22_Padding Image": abyz22_Pad_Image,
@@ -39,6 +40,7 @@ NODE_CLASS_MAPPINGS = {
     "abyz22_AddPrompt": abyz22_AddPrompt,
     "abyz22_censoring": abyz22_censoring,
     "abyz22_ResizeOpenpose": abyz22_ResizeOpenpose,
+    "abyz22_path_generator": abyz22_path_generator,
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
@@ -70,4 +72,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "abyz22_AddPrompt": "abyz22_AddPrompt",
     "abyz22_censoring": "abyz22_censoring",
     "abyz22_ResizeOpenpose": "abyz22_ResizeOpenpose",
+    "abyz22_path_generator": "abyz22_path_generator",
 }

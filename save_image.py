@@ -34,25 +34,31 @@ class abyz22_SaveImage:
             filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0]
         )
 
-
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
         full_output_folder = folder_path
 
         file_list = os.listdir(folder_path)
-        file_list= [int(f.split('.')[0]) for f in file_list]
+        file_list = [f for f in file_list if ".png" in f]
+        file_list = [int(f.split(".")[0].split("-")[1]) for f in file_list]
         file_list.sort(reverse=True)
-        counter = 1 if len(file_list)==0 else file_list[0] +1
+        counter = 1 if len(file_list) == 0 else file_list[0] + 1
+
+        file_list = os.listdir(folder_path)
+        for file in file_list:
+            if ".zip" in file:
+                counter = 1
 
         results = list()
         for image in images:
             i = 255.0 * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
-            file = f"{counter}.png"
-            if folder_path != 'no-data':
+            if folder_path != "no-data":
+                folder_num = folder_path.rsplit("/", 1)[1]
+                file = f"{folder_num}-{counter}.png"
                 img.save(os.path.join(full_output_folder, file), pnginfo=None, compress_level=self.compress_level)
-            results.append({"filename": file, "subfolder": subfolder, "type": self.type})
+                results.append({"filename": file, "subfolder": subfolder, "type": self.type})
             counter += 1
 
         return {"ui": {"images": results}}

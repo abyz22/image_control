@@ -24,9 +24,9 @@ class abyz22_Topipe:
                 "Positive": ("CONDITIONING",),
                 "Negative": ("CONDITIONING",),
                 "IMAGE": ("IMAGE",),
-                "latent_Image": ("LATENT",),
             },
             "optional": {
+                "latent_Image": ("LATENT",),
                 "latent": ("LATENT",),
             },
         }
@@ -149,6 +149,7 @@ class abyz22_Editpipe:
 
         return (pipe,)
 
+
 class abyz22_Convertpipe:
     def __init__(self):
         pass
@@ -161,8 +162,14 @@ class abyz22_Convertpipe:
             },
         }
 
-    RETURN_TYPES = ("BASIC_PIPE","IMAGE",)
-    RETURN_NAMES = ("basic_pipe",'image',)
+    RETURN_TYPES = (
+        "BASIC_PIPE",
+        "IMAGE",
+    )
+    RETURN_NAMES = (
+        "basic_pipe",
+        "image",
+    )
 
     FUNCTION = "run"
 
@@ -170,14 +177,17 @@ class abyz22_Convertpipe:
 
     def run(sefl, *args, **kwargs):
         pipe = kwargs["pipe"]
-        model=pipe['MODEL']
-        clip=pipe['CLIP']
-        vae=pipe['VAE']
-        positive=pipe['POSITIVE']
-        negative=pipe['NEGATIVE']
+        model = pipe["MODEL"]
+        clip = pipe["CLIP"]
+        vae = pipe["VAE"]
+        positive = pipe["POSITIVE"]
+        negative = pipe["NEGATIVE"]
 
-        basic_pipe=(model,clip,vae,positive,negative)
-        return (basic_pipe,pipe['IMAGE'],)
+        basic_pipe = (model, clip, vae, positive, negative)
+        return (
+            basic_pipe,
+            pipe["IMAGE"],
+        )
 
 
 def tensor_convert_rgba(image, prefer_copy=True):

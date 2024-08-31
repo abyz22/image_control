@@ -329,27 +329,29 @@ class abyz22_ResizeOpenpose:
                 image = draw_pose(image, keypoints, POSE_PAIRS_BODY, JOINT_COLORS, LINE_COLORS_BODY, kwargs["Line Thickness"])
 
                 if kwargs["Face"] != 0:
-                    face_keypoints = np.array(person["face_keypoints_2d"]).reshape(-1, 3)
-                    face_keypoints = face_keypoints + (keypoints[0] - nose)
-                    face_keypoints = rescale_keypoints(face_keypoints, kwargs)
-                    image = draw_pose(
-                        image, face_keypoints, POSE_PAIRS_BODY, JOINT_COLORS, LINE_COLORS_BODY, kwargs["Line Thickness"]
-                    )
+                    if person.get("face_keypoints_2d") is not None:
+                        face_keypoints = np.array(person["face_keypoints_2d"]).reshape(-1, 3)
+                        face_keypoints = face_keypoints + (keypoints[0] - nose)
+                        face_keypoints = rescale_keypoints(face_keypoints, kwargs)
+                        image = draw_pose(
+                            image, face_keypoints, POSE_PAIRS_BODY, JOINT_COLORS, LINE_COLORS_BODY, kwargs["Line Thickness"]
+                        )
 
                 if kwargs["Hands"] != 0:
-                    hand_right_keypoints = np.array(person["hand_right_keypoints_2d"]).reshape(-1, 3)
-                    hand_right_keypoints = hand_right_keypoints + (keypoints[4] - right_hand)
-                    hand_right_keypoints = rescale_keypoints(hand_right_keypoints, kwargs)
-                    image = draw_pose(
-                        image, hand_right_keypoints, POSE_PAIRS_HAND, JOINT_COLORS, LINE_COLORS_HAND, kwargs["Line Thickness"]
-                    )
-
-                    hand_left_keypoints = np.array(person["hand_left_keypoints_2d"]).reshape(-1, 3)
-                    hand_left_keypoints = hand_left_keypoints + (keypoints[7] - left_hand)
-                    hand_left_keypoints = rescale_keypoints(hand_left_keypoints, kwargs)
-                    image = draw_pose(
-                        image, hand_left_keypoints, POSE_PAIRS_HAND, JOINT_COLORS, LINE_COLORS_HAND, kwargs["Line Thickness"]
-                    )
+                    if person.get("hand_right_keypoints_2d") is not None:
+                        hand_right_keypoints = np.array(person["hand_right_keypoints_2d"]).reshape(-1, 3)
+                        hand_right_keypoints = hand_right_keypoints + (keypoints[4] - right_hand)
+                        hand_right_keypoints = rescale_keypoints(hand_right_keypoints, kwargs)
+                        image = draw_pose(
+                            image, hand_right_keypoints, POSE_PAIRS_HAND, JOINT_COLORS, LINE_COLORS_HAND, kwargs["Line Thickness"]
+                        )
+                    if person.get("hand_left_keypoints_2d") is not None:
+                        hand_left_keypoints = np.array(person["hand_left_keypoints_2d"]).reshape(-1, 3)
+                        hand_left_keypoints = hand_left_keypoints + (keypoints[7] - left_hand)
+                        hand_left_keypoints = rescale_keypoints(hand_left_keypoints, kwargs)
+                        image = draw_pose(
+                            image, hand_left_keypoints, POSE_PAIRS_HAND, JOINT_COLORS, LINE_COLORS_HAND, kwargs["Line Thickness"]
+                        )
 
             image = image[:, :, ::-1][np.newaxis, :, :, :]
             images = image if i == 0 else np.concatenate([images, image])
