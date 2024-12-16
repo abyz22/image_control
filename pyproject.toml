@@ -1,0 +1,15 @@
+[project]
+name = "image_control"
+description = "Nodes:abyz22_Padding Image, abyz22_ImpactWildcardEncode, abyz22_setimageinfo, abyz22_SaveImage, abyz22_ImpactWildcardEncode_GetPrompt, abyz22_SetQueue, abyz22_drawmask, abyz22_FirstNonNull, abyz22_blendimages, abyz22_blend_onecolor. Please check workflow in [a/https://github.com/abyz22/image_control](https://github.com/abyz22/image_control)"
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["openpyxl", "pytorch-lightning", "kornia"]
+
+[project.urls]
+Repository = "https://github.com/abyz22/image_control"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "image_control"
+Icon = ""
